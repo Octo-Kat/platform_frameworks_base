@@ -3102,7 +3102,7 @@ public final class Settings {
         public static final String NAVIGATION_BAR_GLOW_TINT = "navigation_bar_glow_tint";
 
         /**
-         * Wether navigation bar is enabled or not
+         * Wether navigation bar is enabled or not)
          * @hide
          */
         public static final String NAVIGATION_BAR_SHOW = "navigation_bar_show";
@@ -3333,6 +3333,14 @@ public final class Settings {
         * Stores the java DateFormat string for the date
         */
         public static final String STATUSBAR_CLOCK_DATE_FORMAT = "statusbar_clock_date_format";
+        
+       /**
+        * Boolean value whether to allow the statusbar to be used as a
+        * brightness slider when collapsed
+        *
+        * @hide
+        */
+        public static final String STATUSBAR_BRIGHTNESS_SLIDER = "statusbar_brightness_slider";
 
         /**
          * Holds the text for the Carrier label. An empty string
