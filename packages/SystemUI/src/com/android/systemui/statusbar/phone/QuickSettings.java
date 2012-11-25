@@ -39,6 +39,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
 import android.media.MediaRouter;
+import android.hardware.display.WifiDisplayStatus;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -449,7 +450,7 @@ class QuickSettings {
                     RSSIState rssiState = (RSSIState) state;
                     ImageView iv = (ImageView) view.findViewById(R.id.rssi_image);
                     ImageView iov = (ImageView) view.findViewById(R.id.rssi_overlay_image);
-                    TextView tv = (TextView) view.findViewById(R.id.rssi_textview);
+                    TextView tv = (TextView) view.findViewById(R.id.text);
                     // Force refresh
                     iv.setImageDrawable(null);
                     iv.setImageResource(rssiState.signalIconId);
@@ -633,19 +634,8 @@ class QuickSettings {
                     return true; // Consume click
                 }} );
         }
-        mModel.addLocationTile(locationTile, new QuickSettingsModel.RefreshCallback() {
-            @Override
-            public void refreshView(QuickSettingsTileView unused, State state) {
-                locationTile.setImageResource(state.iconId);
-                String locationState = mContext.getString(
-                        (state.enabled) ? R.string.accessibility_desc_on
-                                : R.string.accessibility_desc_off);
-                locationTile.setContentDescription(mContext.getString(
-                        R.string.accessibility_quick_settings_location,
-                        locationState));
-                locationTile.setText(state.label);
-            }
-        });
+        mModel.addLocationTile(locationTile,
+                new QuickSettingsModel.BasicRefreshCallback(locationTile));
         parent.addView(locationTile);
     }
 
