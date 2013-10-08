@@ -58,6 +58,7 @@
     import com.android.server.content.ContentService;
     import com.android.server.display.DisplayManagerService;
     import com.android.server.dreams.DreamManagerService;
+	import com.android.server.gesture.GestureService;
     import com.android.server.input.InputManagerService;
     import com.android.server.media.MediaRouterService;
     import com.android.server.net.NetworkPolicyManagerService;
@@ -361,6 +362,7 @@
             DreamManagerService dreamy = null;
             AssetAtlasService atlas = null;
             PrintManagerService printManager = null;
+			GestureService gestureService = null;
             MediaRouterService mediaRouter = null;
 			ThemeService themeService = null;
 
@@ -797,6 +799,17 @@
                     }
                 }
 
+                if (context.getResources().getBoolean(
+                        com.android.internal.R.bool.config_enableGestureService)) {
+                    try {
+                        Slog.i(TAG, "Gesture Sensor Service");
+                        gestureService = new GestureService(context, inputManager);
+                        ServiceManager.addService("gesture", gestureService);
+                    } catch (Throwable e) {
+                        Slog.e(TAG, "Failure starting Gesture Sensor Service", e);
+                    }
+                }
+				
                 try {
                     Slog.i(TAG, "IdleMaintenanceService");
                     new IdleMaintenanceService(context, battery);
@@ -877,6 +890,17 @@
                 }
             }
 
+            if (context.getResources().getBoolean(
+                    com.android.internal.R.bool.config_enableGestureService)) {
+                try {
+                    Slog.i(TAG, "Gesture Sensor Service");
+                    gestureService = new GestureService(context, inputManager);
+                    ServiceManager.addService("gesture", gestureService);
+                } catch (Throwable e) {
+                    Slog.e(TAG, "Failure starting Gesture Sensor Service", e);
+                }
+            }
+
             try {
                 wm.systemReady();
             } catch (Throwable e) {
@@ -912,6 +936,15 @@
                 display.systemReady(safeMode, onlyCore);
             } catch (Throwable e) {
                 reportWtf("making Display Manager Service ready", e);
+            }
+			
+
+            if (gestureService != null) {
+                try {
+                    gestureService.systemReady();
+                } catch (Throwable e) {
+                    reportWtf("making Gesture Sensor Service ready", e);
+                }
             }
             
             IntentFilter filter = new IntentFilter();
