@@ -1797,4 +1797,8 @@
   <java-symbol type="string" name="privacy_guard_notification_detail" />
   <java-symbol type="drawable" name="stat_notify_privacy_guard" />
 
+  <!-- HW rotation lock -->
+  <java-symbol type="string" name="toast_rotation_unlocked" />
+  <java-symbol type="string" name="toast_rotation_locked" />
+
 </resources>
