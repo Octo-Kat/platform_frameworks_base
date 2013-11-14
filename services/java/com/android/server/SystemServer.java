@@ -58,12 +58,13 @@
     import com.android.server.content.ContentService;
     import com.android.server.display.DisplayManagerService;
     import com.android.server.dreams.DreamManagerService;
-	import com.android.server.gesture.GestureService;
+    import com.android.server.gesture.GestureService;
     import com.android.server.input.InputManagerService;
     import com.android.server.media.MediaRouterService;
     import com.android.server.net.NetworkPolicyManagerService;
     import com.android.server.net.NetworkStatsService;
     import com.android.server.os.SchedulingPolicyService;
+    import com.android.server.gesture.EdgeGestureService;
     import com.android.server.pm.Installer;
     import com.android.server.pm.PackageManagerService;
     import com.android.server.pm.UserManagerService;
@@ -366,9 +367,10 @@
             DreamManagerService dreamy = null;
             AssetAtlasService atlas = null;
             PrintManagerService printManager = null;
-			GestureService gestureService = null;
+            GestureService gestureService = null;
             MediaRouterService mediaRouter = null;
-			ThemeService themeService = null;
+            EdgeGestureService edgeGestureService = null;
+            ThemeService themeService = null;
 
             // Bring up services needed for UI.
             if (factoryTest != SystemServer.FACTORY_TEST_LOW_LEVEL) {
@@ -848,6 +850,14 @@
                         reportWtf("starting MediaRouterService", e);
                     }
                 }
+
+                try {
+                    Slog.i(TAG, "EdgeGesture service");
+                    edgeGestureService = new EdgeGestureService(context, inputManager);
+                    ServiceManager.addService("edgegestureservice", edgeGestureService);
+                } catch (Throwable e) {
+                    Slog.e(TAG, "Failure starting EdgeGesture service", e);
+                }
             }
 
             // Before things start rolling, be sure we have decided whether
@@ -970,6 +980,15 @@
             filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
             filter.addDataScheme("package");
             context.registerReceiver(new AppsLaunchFailureReceiver(), filter);
+
+
+            if (edgeGestureService != null) {
+                try {
+                    edgeGestureService.systemReady();
+                } catch (Throwable e) {
+                    reportWtf("making EdgeGesture service ready", e);
+                }
+            }
 
             // These are needed to propagate to the runnable below.
             final Context contextF = context;
