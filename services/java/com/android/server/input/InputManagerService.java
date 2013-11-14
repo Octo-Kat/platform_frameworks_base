@@ -503,6 +503,15 @@ public class InputManagerService extends IInputManager.Stub
         }
     }
 
+    private int findInputFilterIndexLocked(IInputFilter filter) {
+        for (int i = 0; i < mInputFilterChain.size(); i++) {
+            if (mInputFilterChain.get(i).mInputFilter == filter) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     @Override // Binder call
     public boolean injectInputEvent(InputEvent event, int mode) {
         if (event == null) {
@@ -1309,6 +1318,17 @@ public class InputManagerService extends IInputManager.Stub
                 }
                 return false;
             }
+        }
+        // call filter input event outside of the lock.
+        // this is safe, because we know that mInputFilter never changes.
+        // we may loose a event, but this does not differ from the original implementation.
+        if (head != null) {
+            try {
+                head.mInputFilter.filterInputEvent(event, policyFlags);
+            } catch (RemoteException e) {
+                /* ignore */
+            }
+            return false;
         }
         event.recycle();
         return true;
