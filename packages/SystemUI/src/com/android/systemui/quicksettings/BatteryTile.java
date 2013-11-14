@@ -31,7 +31,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.view.View.OnLongClickListener;
+import android.view.View.OnClickListener;
 
 import com.android.systemui.BatteryMeterView;
 import com.android.systemui.BatteryCircleMeterView;
@@ -52,13 +52,16 @@ public class BatteryTile extends QuickSettingsTile implements BatteryStateChange
 
         mController = controller;
 
-        mOnLongClick = new OnLongClickListener() {
+        mBatteryLevel = mController.getBatteryLevel();
+        mPluggedIn = mController.isBatteryStatusCharging();
+
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(Intent.ACTION_POWER_USAGE_SUMMARY);
-                return true;
             }
         };
+
         qsc.registerObservedContent(Settings.System.getUriFor(
                 Settings.System.STATUS_BAR_BATTERY), this);
         qsc.registerObservedContent(Settings.System.getUriFor(
@@ -143,9 +146,6 @@ public class BatteryTile extends QuickSettingsTile implements BatteryStateChange
             tv.setText(mLabel);
             tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTileTextSize);
             tv.setPadding(0, mTileTextPadding, 0, 0);
-            if (mTileTextColor != -2) {
-                tv.setTextColor(mTileTextColor);
-            }
         }
     }
 
