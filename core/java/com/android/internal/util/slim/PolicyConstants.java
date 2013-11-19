@@ -23,12 +23,20 @@ public class PolicyConstants {
     public static final String ACTION_SCREENSHOT = "**screenshot**";
     public static final String ACTION_AIRPLANE   = "**airplane**";
     public static final String ACTION_SOUND      = "**sound**";
+    public static final String ACTION_EXPANDED_DESKTOP     = "**expanded_desktop**";
+    public static final String ACTION_SCREEN_RECORD        = "**screen_record**";
 
     public static final String ACTION_DELIMITER  = "|";
+    public static final String ICON_EMPTY = "empty";
+    public static final String SYSTEM_ICON_IDENTIFIER = "system_shortcut=";
 
     public static final String POWER_MENU_CONFIG_DEFAULT =
-          ACTION_POWER_OFF  + ACTION_DELIMITER
-        + ACTION_REBOOT     + ACTION_DELIMITER
-        + ACTION_AIRPLANE   + ACTION_DELIMITER
-        + ACTION_SOUND;
+          ACTION_POWER_OFF + ACTION_DELIMITER
+        + ICON_EMPTY       + ACTION_DELIMITER
+        + ACTION_REBOOT    + ACTION_DELIMITER
+        + ICON_EMPTY       + ACTION_DELIMITER
+        + ACTION_AIRPLANE  + ACTION_DELIMITER
+        + ICON_EMPTY       + ACTION_DELIMITER
+        + ACTION_SOUND     + ACTION_DELIMITER
+        + ICON_EMPTY       + ACTION_DELIMITER;
 }
