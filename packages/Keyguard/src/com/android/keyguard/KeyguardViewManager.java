@@ -594,7 +594,9 @@ public class KeyguardViewManager {
         } else {
 			mWindowLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER;
         }
-		mViewManager.updateViewLayout(mKeyguardHost, mWindowLayoutParams);
+        mWindowLayoutParams.format = show ? PixelFormat.TRANSLUCENT : PixelFormat.OPAQUE;
+
+        mViewManager.updateViewLayout(mKeyguardHost, mWindowLayoutParams);
     }
 
     public void setNeedsInput(boolean needsInput) {
