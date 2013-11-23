@@ -78,6 +78,7 @@ import android.widget.Toast;
 import com.android.internal.R;
 
 import com.android.internal.notification.NotificationScorer;
+import com.android.internal.util.slim.QuietHoursHelper;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -1262,10 +1263,23 @@ public class NotificationManagerService extends INotificationManager.Stub
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(ENABLED_NOTIFICATION_LISTENERS_URI,
                     false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_ENABLED), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_START), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_END), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_MUTE), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_STILL), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_DIM), false, this, UserHandle.USER_ALL);
             update(null);
         }
 
-        @Override public void onChange(boolean selfChange, Uri uri) {
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
             update(uri);
         }
 
@@ -1870,14 +1884,17 @@ public class NotificationManagerService extends INotificationManager.Stub
                         Uri soundUri = null;
                         boolean hasValidSound = false;
 
-                        if (useDefaultSound) {
+                        if (!(QuietHoursHelper.inQuietHours(
+                                    mContext, Settings.System.QUIET_HOURS_MUTE))
+                                && useDefaultSound) {
                             soundUri = Settings.System.DEFAULT_NOTIFICATION_URI;
 
                             // check to see if the default notification sound is silent
                             ContentResolver resolver = mContext.getContentResolver();
                             hasValidSound = Settings.System.getString(resolver,
                                    Settings.System.NOTIFICATION_SOUND) != null;
-                        } else if (notification.sound != null) {
+                        } else if (!(QuietHoursHelper.inQuietHours(mContext,
+                                Settings.System.QUIET_HOURS_MUTE)) && notification.sound != null) {
                             soundUri = notification.sound;
                             hasValidSound = (soundUri != null);
                         }
@@ -1924,7 +1941,9 @@ public class NotificationManagerService extends INotificationManager.Stub
                         final boolean useDefaultVibrate =
                                 (notification.defaults & Notification.DEFAULT_VIBRATE) != 0;
 
-                        if ((useDefaultVibrate || convertSoundToVibration || hasCustomVibrate)
+                        if (!(QuietHoursHelper.inQuietHours(
+                                    mContext, Settings.System.QUIET_HOURS_STILL))
+                                && (useDefaultVibrate || convertSoundToVibration || hasCustomVibrate)
                                 && !(audioManager.getRingerMode()
                                         == AudioManager.RINGER_MODE_SILENT)) {
                             mVibrateNotification = r;
@@ -2249,10 +2268,12 @@ public class NotificationManagerService extends INotificationManager.Stub
             }
         }
 
-        // Don't flash while we are in a call or screen is on
-        if (mLedNotification == null || mInCall || mScreenOn) {
+
+        // Don't flash while we are in a call or screen is on or its disabled
+        if (mLedNotification == null || mInCall || mScreenOn || !mNotificationPulseEnabled ||
+            (QuietHoursHelper.inQuietHours(mContext, Settings.System.QUIET_HOURS_DIM))) {
             mNotificationLight.turnOff();
-        } else {
+        } else if (mNotificationPulseEnabled) {
             final Notification ledno = mLedNotification.sbn.getNotification();
             int ledARGB = ledno.ledARGB;
             int ledOnMS = ledno.ledOnMS;
