@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <array name="ad_targets_unlock_only">
+        <item>@drawable/ic_ad_target_unlock</item>
+    </array> 
+
+</resources>
