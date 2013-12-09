@@ -2322,17 +2322,4 @@ public class ActivityManager {
             e.printStackTrace(pw);
         }
     }
-    
-    /**
-     * @throws SecurityException Throws SecurityException if the caller does
-     * not hold the {@link android.Manifest.permission#CHANGE_CONFIGURATION} permission.
-     *
-     * @hide
-     */
-    public void updateConfiguration(Configuration values) throws SecurityException {
-        try {
-            ActivityManagerNative.getDefault().updateConfiguration(values);
-        } catch (RemoteException e) {
-        }
-    }
 }
