@@ -2636,6 +2636,13 @@ public final class Settings {
          * @hide
          */
         public static final String QUICK_TILES_TEXT_COLOR = "quick_tiles_text_color";
+        
+       /**
+         * Animate-flip Quick Settings Panel Tiles on click
+         *
+         * @hide
+         */
+        public static final String QUICK_SETTINGS_TILES_FLIP = "quick_settings_tiles_flip";
  
         /*       
          * Alternative recent apps integration using OmniSwitch
