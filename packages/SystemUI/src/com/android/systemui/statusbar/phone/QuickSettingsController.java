@@ -28,6 +28,7 @@ import static com.android.internal.util.oct.QSConstants.TILE_GPS;
 import static com.android.internal.util.oct.QSConstants.TILE_LOCKSCREEN;
 import static com.android.internal.util.oct.QSConstants.TILE_LTE;
 import static com.android.internal.util.oct.QSConstants.TILE_MOBILEDATA;
+import static com.android.internal.util.oct.QSConstants.TILE_MUSIC;
 import static com.android.internal.util.oct.QSConstants.TILE_NETWORKMODE;
 import static com.android.internal.util.oct.QSConstants.TILE_NFC;
 import static com.android.internal.util.oct.QSConstants.TILE_RINGER;
@@ -71,6 +72,7 @@ import com.android.systemui.quicksettings.InputMethodTile;
 import com.android.systemui.quicksettings.LteTile;
 import com.android.systemui.quicksettings.MobileNetworkTile;
 import com.android.systemui.quicksettings.MobileNetworkTypeTile;
+import com.android.systemui.quicksettings.MusicTile;
 import com.android.systemui.quicksettings.NfcTile;
 import com.android.systemui.quicksettings.PreferencesTile;
 import com.android.systemui.quicksettings.QuickSettingsTile;
@@ -239,6 +241,8 @@ public class QuickSettingsController {
                 qs = new LteTile(mContext, this);
             } else if (tile.equals(TILE_VOLUME)) {
                 qs = new VolumeTile(mContext, this, mHandler);
+            } else if (tile.equals(TILE_MUSIC)) {
+                qs = new MusicTile(mContext, this);
             }
 
             if (qs != null) {
