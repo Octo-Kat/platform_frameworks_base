@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * This code has been modified.  Portions copyright (C) 2010, T-Mobile USA, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -374,7 +375,11 @@ public class ActivityInfo extends ComponentInfo
      * can itself handle changes to the screen orientation.  Set from the
      * {@link android.R.attr#configChanges} attribute.
      */
-    public static final int CONFIG_ORIENTATION = 0x0080;
+    public static final int CONFIG_ORIENTATION = 0x0080;    
+    /**
+     * @hide
+     */
+    public static final int CONFIG_THEME_RESOURCE = 0x008000; 
     /**
      * Bit in {@link #configChanges} that indicates that the activity
      * can itself handle changes to the screen layout.  Set from the

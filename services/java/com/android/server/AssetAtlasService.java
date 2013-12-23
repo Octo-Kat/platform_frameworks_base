@@ -435,6 +435,10 @@ public class AssetAtlasService extends IAssetAtlas.Stub {
             float delay = (System.nanoTime() - begin) / 1000.0f / 1000.0f / 1000.0f;
             Log.d(LOG_TAG, String.format("Found best atlas configuration in %.2fs", delay));
         }
+        
+
+        // PRELOAD_RESOURCES may have been disabled!
+        if (results.size() == 0) return null;
 
         WorkerResult result = results.get(0);
         return new Configuration(result.type, result.width, result.height, result.count);

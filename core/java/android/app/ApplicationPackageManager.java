@@ -448,6 +448,19 @@ final class ApplicationPackageManager extends PackageManager {
             throw new RuntimeException("Package manager has died", e);
         }
     }
+    
+    @Override
+    public List<PackageInfo> getInstalledThemePackages() {
+        // Returns a list of theme APKs.
+        ArrayList<PackageInfo> finalList = new ArrayList<PackageInfo>();
+        List<PackageInfo> installedPackagesList = getInstalledPackages(0);
+        for (PackageInfo pi : installedPackagesList) {
+            if (pi != null && pi.isThemeApk) {
+                finalList.add(pi);
+            }
+        }
+        return finalList;
+    }
 
     @SuppressWarnings("unchecked")
     @Override
