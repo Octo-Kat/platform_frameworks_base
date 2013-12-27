@@ -341,6 +341,19 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             }
         }
     };
+    
+    private final Runnable mNotifyClearAll = new Runnable() {
+        @Override
+        public void run() {
+            if (DEBUG) {
+                Log.v(TAG, "Notifying status bar of notification clear");
+            }
+            try {
+                mPile.setViewRemoval(true);
+                mBarService.onClearAllNotifications();
+            } catch (RemoteException ex) { }
+        }
+    };
 
     // status bar brightness control
     Runnable mLongPressBrightnessChange = new Runnable() {
