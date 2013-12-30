@@ -1346,6 +1346,18 @@ public class NotificationManagerService extends INotificationManager.Stub
                     Settings.System.NOTIFICATION_LIGHT_PULSE_CUSTOM_ENABLE), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.NOTIFICATION_LIGHT_PULSE_CUSTOM_VALUES), false, this);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_ENABLED), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_START), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_END), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_MUTE), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_STILL), false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.QUIET_HOURS_DIM), false, this, UserHandle.USER_ALL);
             update(null);
         }
 
