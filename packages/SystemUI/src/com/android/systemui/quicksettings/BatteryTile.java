@@ -2,9 +2,8 @@ package com.android.systemui.quicksettings;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
-import android.os.BatteryManager;
-import android.view.LayoutInflater;
+import android.provider.Settings;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -78,7 +77,11 @@ public class BatteryTile extends QuickSettingsTile implements BatteryStateChange
     @Override
     void updateQuickSettings() {
         TextView tv = (TextView) mTile.findViewById(R.id.text);
-        tv.setText(mLabel);
+        if (tv != null) {
+            tv.setText(mLabel);
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, mTileTextSize);
+            tv.setPadding(0, mTileTextPadding, 0, 0);
+        }
     }
 
 }
