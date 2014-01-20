@@ -2508,6 +2508,13 @@ public final class Settings {
          * @hide
          */
         public static final String QS_DYNAMIC_USBTETHER = "qs_dyanmic_usbtether";
+		
+        /**
+         * Quick Settings Panel Dynamic Tiles
+         *
+         * @hide
+         */
+        public static final String QS_DYNAMIC_DOCK_BATTERY = "qs_dyanmic_dock_battery";
 
         /**
          * Quick Settings Panel Dynamic Tiles
@@ -2523,6 +2530,19 @@ public final class Settings {
          * @hide
          */
         public static final String QUICK_SETTINGS_TILES = "quick_settings_tiles";
+		
+        /**
+         * Number of QuickSettings tiles per row
+         * @hide
+         */
+        public static final String QUICK_TILES_PER_ROW = "quick_tiles_per_row";
+
+        /**
+         * Whether on landscape tiles quantity per row are duplicated
+         * @hide
+         */
+        public static final String QUICK_TILES_PER_ROW_DUPLICATE_LANDSCAPE =
+                "quick_tiles_per_row_duplicate_landscape";
 
         /**
          * Show circle memory indicator in recents panel view
