@@ -26,7 +26,9 @@
     import android.content.IntentFilter;
     import android.content.pm.IPackageManager;
     import android.content.pm.PackageManager;
+	import android.content.pm.ThemeUtils;
     import android.content.res.Configuration;
+	import android.content.res.CustomTheme;
     import android.media.AudioService;
     import android.net.wifi.p2p.WifiP2pService;
     import android.os.Environment;
@@ -360,6 +362,7 @@
             AssetAtlasService atlas = null;
             PrintManagerService printManager = null;
             MediaRouterService mediaRouter = null;
+			ThemeService themeService = null;
 
             // Bring up services needed for UI.
             if (factoryTest != SystemServer.FACTORY_TEST_LOW_LEVEL) {
@@ -857,6 +860,14 @@
                 }
             }
 
+            try {
+                Slog.i(TAG, "Theme Service");
+                themeService = new ThemeService(context);
+                ServiceManager.addService(Context.THEME_SERVICE, themeService);
+            } catch (Throwable e) {
+                reportWtf("starting Theme Service", e);
+            }
+
             if (devicePolicy != null) {
                 try {
                     devicePolicy.systemReady();
@@ -1100,6 +1111,13 @@
                     } catch (Throwable e) {
                         reportWtf("Notifying MediaRouterService running", e);
                     }
+					try {
+						CustomTheme customTheme = CustomTheme.getBootTheme(contextF.getContentResolver());
+						String iconPkg = customTheme.getIconPackPkgName();
+						pmf.updateIconMapping(iconPkg);
+					} catch (Throwable e) {
+						reportWtf("Icon Mapping failed", e);
+					}
                 }
             });
 

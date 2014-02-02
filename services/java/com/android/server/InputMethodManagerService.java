@@ -15,7 +15,7 @@
 
 package com.android.server;
 
-import com.android.internal.app.ThemeUtils;
+import android.content.pm.ThemeUtils;
 import android.provider.Settings.SettingNotFoundException;
 
 import com.android.internal.content.PackageMonitor;
