@@ -2543,6 +2543,12 @@ public final class Settings {
          */
         public static final String QUICK_TILES_PER_ROW_DUPLICATE_LANDSCAPE =
                 "quick_tiles_per_row_duplicate_landscape";
+				
+        /**
+         * Color of QuickSettings tiles text
+         * @hide
+         */
+        public static final String QUICK_TILES_TEXT_COLOR = "quick_tiles_text_color";
 
         /**
          * Show circle memory indicator in recents panel view
