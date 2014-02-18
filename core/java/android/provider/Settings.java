@@ -2609,6 +2609,13 @@ public final class Settings {
          * @hide
          */
         public static final String QS_DYNAMIC_WIFI = "qs_dyanmic_wifi";
+		
+		/**
+		 *
+		 * SMOOTH PROGRESS BAR interpolator
+		 * @hide
+		 */
+        public static final String PROGRESSBAR_INTERPOLATOR = "progressbar_interpolator";
 
 		/**
 		 *
