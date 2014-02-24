@@ -209,26 +209,13 @@ public abstract class BaseStatusBar extends SystemUI implements
                 mDeviceProvisioned = provisioned;
                 updateNotificationIcons();
             }
-            mOmniSwitchEnabled = Settings.System.getIntForUser(
-                    mContext.getContentResolver(), Settings.System.RECENTS_USE_OMNISWITCH,
-                    0, UserHandle.USER_CURRENT) == 1;
-        }
-    };
 
-    private class SettingsObserver extends ContentObserver {
-        public SettingsObserver(Handler handler) {
-            super(handler);
-        }
-
-        public void observe() {
             ContentResolver resolver = mContext.getContentResolver();
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_COLLAPSE_ON_DISMISS), false, this);
-            update();
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
+            mOmniSwitchEnabled = Settings.System.getIntForUser(
+                    mContext.getContentResolver(), Settings.System.RECENTS_USE_OMNISWITCH,
+                    0, UserHandle.USER_CURRENT) == 1;
             update();
         }
 
