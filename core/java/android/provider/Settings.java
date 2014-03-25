@@ -2872,6 +2872,12 @@ public final class Settings {
          * @hide
          */
         public static final String POWER_MENU_CONFIG = "power_menu_config";
+		
+	/**
+         * QuickSettings music tile mode
+         * @hide
+         */
+        public static final String MUSIC_TILE_MODE = "music_tile_mode";
 
         /**
          * Quick Settings Quick access ribbon

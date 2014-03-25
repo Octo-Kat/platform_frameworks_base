@@ -106,6 +106,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     private Action mSilentModeAction;
     private ToggleAction mAirplaneModeOn;
+	private ToggleAction mExpandDesktopModeOn;
 
     private MyAdapter mAdapter;
 
