@@ -33,8 +33,6 @@ public class PolicyConstants {
     public static final String POWER_MENU_CONFIG_DEFAULT =
           ACTION_POWER_OFF + ACTION_DELIMITER
         + ICON_EMPTY       + ACTION_DELIMITER
-        + ACTION_REBOOT    + ACTION_DELIMITER
-        + ICON_EMPTY       + ACTION_DELIMITER
         + ACTION_AIRPLANE  + ACTION_DELIMITER
         + ICON_EMPTY       + ACTION_DELIMITER
         + ACTION_SOUND     + ACTION_DELIMITER
