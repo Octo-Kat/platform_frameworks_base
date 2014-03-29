@@ -36,6 +36,7 @@ import static com.android.internal.util.oct.QSConstants.TILE_SCREENTIMEOUT;
 import static com.android.internal.util.oct.QSConstants.TILE_SETTINGS;
 import static com.android.internal.util.oct.QSConstants.TILE_SLEEP;
 import static com.android.internal.util.oct.QSConstants.TILE_SYNC;
+import static com.android.internal.util.oct.QSConstants.TILE_TENTACLES;
 import static com.android.internal.util.oct.QSConstants.TILE_TORCH;
 import static com.android.internal.util.oct.QSConstants.TILE_USER;
 import static com.android.internal.util.oct.QSConstants.TILE_VOLUME;
@@ -80,6 +81,7 @@ import com.android.systemui.quicksettings.RingerModeTile;
 import com.android.systemui.quicksettings.ScreenTimeoutTile;
 import com.android.systemui.quicksettings.SleepScreenTile;
 import com.android.systemui.quicksettings.SyncTile;
+import com.android.systemui.quicksettings.TentaclesTile;
 import com.android.systemui.quicksettings.ToggleLockscreenTile;
 import com.android.systemui.quicksettings.TorchTile;
 import com.android.systemui.quicksettings.UsbTetherTile;
@@ -227,6 +229,8 @@ public class QuickSettingsController {
                 qs = new AutoRotateTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_AIRPLANE)) {
                 qs = new AirplaneModeTile(mContext, this, mStatusBarService.mNetworkController);
+            } else if (tile.equals(TILE_TENTACLES)) {
+                qs = new TentaclesTile(mContext, this);
             } else if (tile.equals(TILE_TORCH)) {
                 qs = new TorchTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_SLEEP)) {
