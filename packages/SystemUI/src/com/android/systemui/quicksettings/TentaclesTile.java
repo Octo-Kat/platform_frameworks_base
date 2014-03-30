@@ -23,7 +23,7 @@ public class TentaclesTile extends QuickSettingsTile{
                 qsc.mBar.collapseAllPanels(true);
                 Intent intent = new Intent("android.intent.action.MAIN");
                 intent.setComponent(ComponentName
-                        .unflattenFromString("com.oct.tentacles/.SettingsActivity"));
+                        .unflattenFromString("com.android.settings/com.oct.tentacles.SettingsActivity"));
                 intent.addCategory("android.intent.category.LAUNCHER");
                 startSettingsActivity(intent);
             }
