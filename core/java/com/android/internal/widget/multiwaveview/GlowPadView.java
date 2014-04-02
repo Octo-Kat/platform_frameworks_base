@@ -488,7 +488,7 @@ public class GlowPadView extends View {
         if (custom != null) {
             Drawable handleDrawable = ImageHelper.resize(mContext,
                 new BitmapDrawable(mContext.getResources(),
-                    ImageHelper.getCircleBitmap(custom)), 144);
+                    ImageHelper.getCircleBitmap(custom)), 110);
             if (lockColor != -2) {
                 handleDrawable = new BitmapDrawable(mContext.getResources(),
                         ImageHelper.getColoredBitmap(handleDrawable, lockColor));
