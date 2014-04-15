@@ -919,6 +919,7 @@
             filter.addAction(Intent.ACTION_APP_LAUNCH_FAILURE_RESET);
             filter.addAction(Intent.ACTION_PACKAGE_ADDED);
             filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+			filter.addAction(ThemeUtils.ACTION_THEME_CHANGED);
             filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
             filter.addDataScheme("package");
             context.registerReceiver(new AppsLaunchFailureReceiver(), filter);
