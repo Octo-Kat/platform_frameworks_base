@@ -811,13 +811,6 @@
                 } catch (Throwable e) {
                     reportWtf("starting Print Service", e);
                 }
-                
-                try {
-                    Slog.i(TAG, "AssetRedirectionManager Service");
-                    ServiceManager.addService("assetredirection", new AssetRedirectionManagerService(context));
-                } catch (Throwable e) {
-                    Slog.e(TAG, "Failure starting AssetRedirectionManager Service", e);
-                }
 
                 if (!disableNonCoreServices) {
                     try {
@@ -958,6 +951,7 @@
             final TelephonyRegistry telephonyRegistryF = telephonyRegistry;
             final PrintManagerService printManagerF = printManager;
             final MediaRouterService mediaRouterF = mediaRouter;
+			final IPackageManager pmf = pm;
 
             // We now tell the activity manager it is okay to run third party
             // code.  It will call back into us once it has gotten to the state

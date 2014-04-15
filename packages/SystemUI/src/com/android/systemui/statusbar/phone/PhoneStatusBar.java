@@ -617,7 +617,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         mLocationController = new LocationController(mContext);
         mBatteryController = new BatteryController(mContext);
-        mDockBatteryController = new DockBatteryController(mContext);
         mBluetoothController = new BluetoothController(mContext);
         mNetworkController = new NetworkController(mContext);
 
@@ -3296,7 +3295,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             addNotificationViews(createNotificationViews(notifData.first, notifData.second));
         }
 
-        updateSettings();
         setAreThereNotifications();
 
         mStatusBarContainer.addView(mStatusBarWindow);

@@ -1841,17 +1841,6 @@ public class ActivityManager {
     }
     
     /**
-     * @hide
-     */
-    public Configuration getConfiguration() {
-        try {
-            return ActivityManagerNative.getDefault().getConfiguration();
-        } catch (RemoteException e) {
-            return null;
-        }
-    }
-    
-    /**
      * Returns a list of application processes installed on external media
      * that are running on the device.
      *
@@ -1869,6 +1858,7 @@ public class ActivityManager {
             return null;
         }
     }
+	
     /**
      * @hide
      */
