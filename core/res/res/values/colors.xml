@@ -203,11 +203,6 @@
 
     <color name="accessibility_focus_highlight">#80ffff00</color>
 
-    <color name="default_dialog_text_holo_dark">@android:color/background_holo_light</color>
-    <color name="default_dialog_text_holo_light">@android:color/background_holo_dark</color>
-    <color name="default_dialog_divider_holo_dark">@android:color/background_holo_light</color>
-    <color name="default_dialog_divider_holo_light">#ffacacac</color>
-
     <!-- Power menu colors -->
     <color name="power_menu_icon_default_color">#ffffffff</color>
     <color name="power_menu_text_default_color">#ffffffff</color>
