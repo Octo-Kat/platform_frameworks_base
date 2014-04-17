@@ -919,7 +919,7 @@
             filter.addAction(Intent.ACTION_APP_LAUNCH_FAILURE_RESET);
             filter.addAction(Intent.ACTION_PACKAGE_ADDED);
             filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
-			filter.addAction(ThemeUtils.ACTION_THEME_CHANGED);
+            filter.addAction(ThemeUtils.ACTION_THEME_CHANGED);
             filter.addCategory(Intent.CATEGORY_THEME_PACKAGE_INSTALLED_STATE_CHANGE);
             filter.addDataScheme("package");
             context.registerReceiver(new AppsLaunchFailureReceiver(), filter);
@@ -952,7 +952,7 @@
             final TelephonyRegistry telephonyRegistryF = telephonyRegistry;
             final PrintManagerService printManagerF = printManager;
             final MediaRouterService mediaRouterF = mediaRouter;
-			final IPackageManager pmf = pm;
+            final IPackageManager pmf = pm;
 
             // We now tell the activity manager it is okay to run third party
             // code.  It will call back into us once it has gotten to the state
