@@ -451,68 +451,6 @@ public class KeyguardViewManager {
         }
     }
 
-    public boolean handleKeyDown(int keyCode, KeyEvent event) {
-        if (event.getRepeatCount() == 0) {
-            mUnlockKeyDown = true;
-        }
-        if (event.isLongPress()) {
-            String action = null;
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_BACK:
-                    action = Settings.System.LOCKSCREEN_LONG_BACK_ACTION;
-                    break;
-                case KeyEvent.KEYCODE_HOME:
-                    action = Settings.System.LOCKSCREEN_LONG_HOME_ACTION;
-                    break;
-                case KeyEvent.KEYCODE_MENU:
-                    action = Settings.System.LOCKSCREEN_LONG_MENU_ACTION;
-                    break;
-            }
-
-            if (action != null) {
-                mUnlockKeyDown = false;
-                String uri = Settings.System.getString(mContext.getContentResolver(), action);
-                if (uri != null && runAction(mContext, uri)) {
-                    long[] pattern = getLongPressVibePattern(mContext);
-                    if (pattern != null) {
-                        Vibrator v = (Vibrator) mContext.getSystemService(mContext.VIBRATOR_SERVICE);
-                        if (pattern.length == 1) {
-                            v.vibrate(pattern[0]);
-                        } else {
-                            v.vibrate(pattern, -1);
-                        }
-                    }
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean handleKeyUp(int keyCode, KeyEvent event) {
-        if (mUnlockKeyDown) {
-            mUnlockKeyDown = false;
-            switch (keyCode) {
-                case KeyEvent.KEYCODE_BACK:
-                    if (mKeyguardView.handleBackKey()) {
-                        return true;
-                    }
-                    break;
-                case KeyEvent.KEYCODE_HOME:
-                    if (mKeyguardView.handleHomeKey()) {
-                        return true;
-                    }
-                    break;
-                case KeyEvent.KEYCODE_MENU:
-                    if (mKeyguardView.handleMenuKey()) {
-                        return true;
-                    }
-                    break;
-            }
-        }
-        return false;
-    }
-
     SparseArray<Parcelable> mStateContainer = new SparseArray<Parcelable>();
 
     private void maybeCreateKeyguardLocked(boolean enableScreenRotation, boolean force,
