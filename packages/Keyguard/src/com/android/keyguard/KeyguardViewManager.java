@@ -59,11 +59,6 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.provider.Settings;
-import android.renderscript.Allocation;
-import android.renderscript.Allocation.MipmapControl;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
 import android.util.Log;
 import android.util.Slog;
 import android.util.SparseArray;
@@ -86,9 +81,6 @@ public class KeyguardViewManager {
     private final static boolean DEBUG = KeyguardViewMediator.DEBUG;
     private static String TAG = "KeyguardViewManager";
     public final static String IS_SWITCHING_USER = "is_switching_user";
-	
-    private final int MAX_BLUR_WIDTH = 900;
-    private final int MAX_BLUR_HEIGHT = 1600;
 
     // Delay dismissing keyguard to allow animations to complete.
     private static final int HIDE_KEYGUARD_DELAY = 500;
@@ -136,10 +128,6 @@ public class KeyguardViewManager {
         void observe() {
             ContentResolver resolver = mContext.getContentResolver();
             resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.LOCKSCREEN_SEE_THROUGH), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.LOCKSCREEN_BLUR_RADIUS), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.LOCKSCREEN_NOTIFICATIONS), false, this);
         }
 
@@ -155,13 +143,8 @@ public class KeyguardViewManager {
     }
 
     private void updateSettings() {
-        mSeeThrough = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_SEE_THROUGH, 0) == 1;
-        mBlurRadius = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_BLUR_RADIUS, mBlurRadius);
         mLockscreenNotifications = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.LOCKSCREEN_NOTIFICATIONS, mLockscreenNotifications ? 0 : 0) == 1;
-        if(!mSeeThrough) mBlurredImage = null;
         if(mLockscreenNotifications && mNotificationViewManager == null) {
             mNotificationViewManager = new NotificationViewManager(mContext, this);
         } else if(!mLockscreenNotifications && mNotificationViewManager != null) {
@@ -230,34 +213,6 @@ public class KeyguardViewManager {
     private boolean shouldEnableTranslucentDecor() {
         Resources res = mContext.getResources();
         return res.getBoolean(R.bool.config_enableLockScreenTranslucentDecor);
-    }
-
-    public void setBackgroundBitmap(Bitmap bmp) {
-        if (bmp != null && mSeeThrough) {
-            mBlurredImage = mBlurRadius > 0 ? blurBitmap(bmp, mBlurRadius)
-                : bmp;
-        } else {
-            mBlurredImage = null;
-        }
-    }
-
-    private Bitmap blurBitmap(Bitmap bmp, int radius) {
-        Bitmap out = Bitmap.createBitmap(bmp);
-        RenderScript rs = RenderScript.create(mContext);
-
-        Allocation input = Allocation.createFromBitmap(
-                rs, bmp, MipmapControl.MIPMAP_NONE, Allocation.USAGE_SCRIPT);
-        Allocation output = Allocation.createTyped(rs, input.getType());
-
-        ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-        script.setInput(input);
-        script.setRadius(radius);
-        script.forEach(output);
-
-        output.copyTo(out);
-
-        rs.destroy();
-        return out;
     }
 
     class ViewManagerHost extends FrameLayout {
@@ -523,11 +478,6 @@ public class KeyguardViewManager {
             inflateKeyguardView(options);
             mKeyguardView.requestFocus();
         }
-		
-        if(mBlurredImage != null) {
-            KeyguardUpdateMonitor.getInstance(mContext).dispatchSetBackground(mBlurredImage);
-        }
- 
         updateUserActivityTimeoutInWindowLayoutParams();
         mViewManager.updateViewLayout(mKeyguardHost, mWindowLayoutParams);
 

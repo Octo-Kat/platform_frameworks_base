@@ -1776,14 +1776,6 @@ public class Intent implements Parcelable, Cloneable {
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_EXTERNAL_APPLICATIONS_UNAVAILABLE =
         "android.intent.action.EXTERNAL_APPLICATIONS_UNAVAILABLE";
-        
-    /**
-     * Broadcast Action: The current keyguard wallpaper configuration
-     * has changed and should be re-read.
-     * {@hide}
-     */
-    public static final String ACTION_KEYGUARD_WALLPAPER_CHANGED =
-            "android.intent.action.KEYGUARD_WALLPAPER_CHANGED";
 
     /**
      * Broadcast Action: The current keyguard wallpaper configuration

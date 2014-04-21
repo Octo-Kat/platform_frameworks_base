@@ -248,7 +248,7 @@ public class WallpaperManager {
                 }
             };
         }
-        
+ 
         public void onWallpaperChanged() {
             /* The wallpaper has changed but we shouldn't eagerly load the
              * wallpaper as that would be inefficient. Reset the cached wallpaper
@@ -256,10 +256,6 @@ public class WallpaperManager {
              * fetch it.
              */
             mHandler.sendEmptyMessage(MSG_CLEAR_WALLPAPER);
-        }
-    
-        public void onKeyguardWallpaperChanged() {
-            mHandler.sendEmptyMessage(MSG_CLEAR_KEYGUARD_WALLPAPER);
         }
 
         public void onKeyguardWallpaperChanged() {
@@ -410,7 +406,7 @@ public class WallpaperManager {
             }
         }
     }
-    
+
     private static final Object sSync = new Object[0];
     private static Globals sGlobals;
 
@@ -833,34 +829,7 @@ public class WallpaperManager {
             // Ignore
         }
     }
-    
-    /**
-     * @hide
-     */
-    public void setKeyguardStream(InputStream data) throws IOException {
-        if (sGlobals.mService == null) {
-            Log.w(TAG, "WallpaperService not running");
-            return;
-        }
-        try {
-            ParcelFileDescriptor fd = sGlobals.mService.setKeyguardWallpaper(null);
-            if (fd == null) {
-                return;
-            }
-            FileOutputStream fos = null;
-            try {
-                fos = new ParcelFileDescriptor.AutoCloseOutputStream(fd);
-                setWallpaper(data, fos);
-            } finally {
-                if (fos != null) {
-                    fos.close();
-                }
-            }
-        } catch (RemoteException e) {
-            // Ignore
-        }
-    }
-    
+
     /**
      * Change the current system wallpaper to a bitmap.  The given bitmap is
      * converted to a PNG and stored as the wallpaper.  On success, the intent
@@ -1237,14 +1206,7 @@ public class WallpaperManager {
     public void clearKeyguardWallpaper() {
         sGlobals.clearKeyguardWallpaper();
     }
-    
-    /**
-     * @hide
-     */
-    public void clearKeyguardWallpaper() {
-        sGlobals.clearKeyguardWallpaper();
-    }
-    
+
     static Bitmap generateBitmap(Context context, Bitmap bm, int width, int height) {
         if (bm == null) {
             return null;
