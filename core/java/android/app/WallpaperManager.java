@@ -262,6 +262,10 @@ public class WallpaperManager {
             mHandler.sendEmptyMessage(MSG_CLEAR_KEYGUARD_WALLPAPER);
         }
 
+        public void onKeyguardWallpaperChanged() {
+            mHandler.sendEmptyMessage(MSG_CLEAR_KEYGUARD_WALLPAPER);
+        }
+
         public Bitmap peekWallpaperBitmap(Context context, boolean returnDefault) {
             synchronized (this) {
                 if (mWallpaper != null) {
@@ -366,7 +370,7 @@ public class WallpaperManager {
             }
             return null;
         }
-        
+
         private Bitmap getDefaultWallpaperLocked(Context context) {
             try {
                 InputStream is = context.getResources().openRawResource(
@@ -393,7 +397,7 @@ public class WallpaperManager {
             }
             return null;
         }
-    
+
         public void clearKeyguardWallpaper() {
             synchronized (this) {
                 try {
@@ -962,6 +966,33 @@ public class WallpaperManager {
         }
     }
 
+    /**
+     * @hide
+     */
+    public void setKeyguardStream(InputStream data) throws IOException {
+        if (sGlobals.mService == null) {
+            Log.w(TAG, "WallpaperService not running");
+            return;
+        }
+        try {
+            ParcelFileDescriptor fd = sGlobals.mService.setKeyguardWallpaper(null);
+            if (fd == null) {
+                return;
+            }
+            FileOutputStream fos = null;
+            try {
+                fos = new ParcelFileDescriptor.AutoCloseOutputStream(fd);
+                setWallpaper(data, fos);
+            } finally {
+                if (fos != null) {
+                    fos.close();
+                }
+            }
+        } catch (RemoteException e) {
+            // Ignore
+        }
+    }
+
     private void setWallpaper(InputStream data, FileOutputStream fos)
             throws IOException {
         byte[] buffer = new byte[32768];
@@ -1198,6 +1229,13 @@ public class WallpaperManager {
      */
     public void clear() throws IOException {
         setResource(com.android.internal.R.drawable.default_wallpaper);
+    }
+
+    /**
+     * @hide
+     */
+    public void clearKeyguardWallpaper() {
+        sGlobals.clearKeyguardWallpaper();
     }
     
     /**
