@@ -255,8 +255,6 @@ public class NavigationBarView extends LinearLayout {
         mVertical = false;
         mShowMenu = false;
         mDelegateHelper = new DelegateViewHelper(this);
-        
-        getIcons(res);
 
         mBarTransitions = new NavigationBarTransitions(this);
 
