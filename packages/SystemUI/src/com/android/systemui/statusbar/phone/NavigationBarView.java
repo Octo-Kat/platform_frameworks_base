@@ -356,8 +356,7 @@ public class NavigationBarView extends LinearLayout {
     }
 
 
-    /*public void updateResources() {
-        getIcons(mContext.getResources());
+    public void updateResources() {
         for (int i = 0; i < mRotatedViews.length; i++) {
             ViewGroup container = (ViewGroup) mRotatedViews[i];
             if (container != null) {
@@ -365,23 +364,10 @@ public class NavigationBarView extends LinearLayout {
             }
         }
     }
-
-    private void updateKeyButtonViewResources(ViewGroup container) {
-        ViewGroup midNavButtons = (ViewGroup) container.findViewById(R.id.nav_buttons);
-        if (midNavButtons != null) {
-            final int nChildern = midNavButtons.getChildCount();
-            for (int i = 0; i < nChildern; i++) {
-                final View child = midNavButtons.getChildAt(i);
-                if (child instanceof KeyButtonView) {
-                    ((KeyButtonView) child).updateResources();
-                }
-            }
-        }
-        KeyButtonView kbv = (KeyButtonView) findViewById(R.id.nav_buttons);
-        if (kbv != null) {
-            kbv.updateResources();
-        }
-    }*/
+	
+	private void updateKeyButtonViewResources(ViewGroup container) {
+		// TODO: Modify to work on OctOS
+	}
 
     @Override
     public void setLayoutDirection(int layoutDirection) {
