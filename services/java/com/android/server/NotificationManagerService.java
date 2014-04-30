@@ -2454,18 +2454,6 @@ public class NotificationManagerService extends INotificationManager.Stub
         return mPackageNameMappings.get(pkg);
     }
 
-    private NotificationLedValues getLedValuesForNotification(NotificationRecord ledNotification) {
-        final String packageName = ledNotification.sbn.getPackageName();
-        return mNotificationPulseCustomLedValues.get(mapPackage(packageName));
-    }
-
-    private String mapPackage(String pkg) {
-        if(!mPackageNameMappings.containsKey(pkg)) {
-            return pkg;
-        }
-        return mPackageNameMappings.get(pkg);
-    }
-
     // lock on mNotificationList
     private int indexOfNotificationLocked(String pkg, String tag, int id, int userId)
     {
