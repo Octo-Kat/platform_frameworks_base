@@ -81,4 +81,7 @@
   <java-symbol type="color" name="holo_green_dark" />
   <java-symbol type="color" name="holo_purple_dark" />
   <java-symbol type="color" name="holo_red_dark" />
+  
+  <!-- Label for the Android system components when they are shown to the user. -->
+  <java-symbol type="string" name="android_system_label" />
 </resources>
