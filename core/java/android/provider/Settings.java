@@ -53,6 +53,7 @@ import android.text.TextUtils;
 import android.util.AndroidException;
 import android.util.Log;
 
+import com.android.internal.util.gummy.LockscreenBackgroundUtil;
 import com.android.internal.widget.ILockSettings;
 
 import java.net.URISyntaxException;
@@ -3223,30 +3224,13 @@ public final class Settings {
          */
         public static final String MENU_VISIBILITY = "menu_visibility";
 
-        /**        
-         * Sets the lockscreen background style
+        /**
+         * Sets the lockscreen background style. Integer.
+         * @see LockscreenBackgroundUtil#LOCKSCREEN_STYLE_DEFAULT
+         * @see LockscreenBackgroundUtil#LOCKSCREEN_STYLE_IMAGE
          * @hide
          */
         public static final String LOCKSCREEN_BACKGROUND_STYLE = "lockscreen_background_style";
-
-        /**
-         * Color for lockscreen background when set to color fill
-         * @hide
-         */
-        public static final String LOCKSCREEN_BACKGROUND_COLOR = "lockscreen_background_color";
-		
-		/**
-         * Allows to show the background activity back the lockscreen
-         * @hide
-         */
-        public static final String LOCKSCREEN_SEE_THROUGH = "lockscreen_see_through";
-
-        /**		
-         * Allows blurring the lockscreen background
-         * @hide
-         */
-        public static final String LOCKSCREEN_BLUR_BEHIND = "lockscreen_blur_behind";
-        public static final String LOCKSCREEN_BLUR_RADIUS = "lockscreen_blur_radius";
 		
        /**
          * Enables/disables lockscreen notifications
