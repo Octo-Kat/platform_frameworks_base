@@ -59,9 +59,9 @@ public class MobileNetworkTile extends NetworkTile {
 
         mCm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 if (!mCm.getMobileDataEnabled()) {
                     // None, onMobileDataSignalChanged will set final overlay image
                     updateOverlayImage(NO_OVERLAY);
@@ -73,18 +73,18 @@ public class MobileNetworkTile extends NetworkTile {
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent();
                 intent.setComponent(new ComponentName(
                         "com.android.settings",
                         "com.android.settings.Settings$DataUsageSummaryActivity"));
                 startSettingsActivity(intent);
-                return true;
             }
         };
     }
