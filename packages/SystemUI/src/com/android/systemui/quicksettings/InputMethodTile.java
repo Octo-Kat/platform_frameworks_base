@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
@@ -31,16 +32,17 @@ public class InputMethodTile extends QuickSettingsTile {
 
         mImm = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
 
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 try {
                     mQsc.mBar.collapseAllPanels(true);
                     Intent intent = new Intent(Settings.ACTION_SHOW_INPUT_METHOD_PICKER);
                     PendingIntent pendingIntent = PendingIntent.getBroadcast(mContext, 0, intent, 0);
                     pendingIntent.send();
                 } catch (Exception e) {}
+                return true;
             }
         };
 

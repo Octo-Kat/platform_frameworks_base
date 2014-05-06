@@ -56,9 +56,9 @@ public class UserTile extends QuickSettingsTile {
     public UserTile(Context context, QuickSettingsController qsc) {
         super(context, qsc, R.layout.quick_settings_tile_user);
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 mQsc.mBar.collapseAllPanels(true);
                 final UserManager um =
                         (UserManager) mContext.getSystemService(Context.USER_SERVICE);
@@ -74,6 +74,7 @@ public class UserTile extends QuickSettingsTile {
                             ContactsContract.Profile.CONTENT_URI);
                     startSettingsActivity(intent);
                 }
+                return true;
             }
         };
         qsc.registerAction(Intent.ACTION_USER_SWITCHED, this);

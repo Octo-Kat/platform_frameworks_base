@@ -21,9 +21,9 @@ public class WifiAPTile extends QuickSettingsTile {
 
         mWifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 int state = mWifiManager.getWifiApState();
                 switch (state) {
                     case WifiManager.WIFI_AP_STATE_ENABLING:
@@ -38,15 +38,15 @@ public class WifiAPTile extends QuickSettingsTile {
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
                 startSettingsActivity(intent);
-                return true;
             }
         };
         qsc.registerAction(WifiManager.WIFI_AP_STATE_CHANGED_ACTION, this);

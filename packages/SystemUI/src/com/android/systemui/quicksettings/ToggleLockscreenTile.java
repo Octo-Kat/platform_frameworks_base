@@ -27,25 +27,25 @@ public class ToggleLockscreenTile extends QuickSettingsTile
     public ToggleLockscreenTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
 
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 sDisabledLockscreen = !sDisabledLockscreen;
                 mPrefs.edit().putBoolean(KEY_DISABLED, sDisabledLockscreen).apply();
                 updateLockscreenState();
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
 
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity("android.settings.SECURITY_SETTINGS");
-                return true;
             }
         };
     }

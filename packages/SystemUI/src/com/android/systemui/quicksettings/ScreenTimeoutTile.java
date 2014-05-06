@@ -32,23 +32,23 @@ public class ScreenTimeoutTile extends QuickSettingsTile {
     public ScreenTimeoutTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 toggleState();
                 updateResources();
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+				return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent("android.settings.DISPLAY_SETTINGS");
                 startSettingsActivity(intent);
-                return true;
             }
         };
 

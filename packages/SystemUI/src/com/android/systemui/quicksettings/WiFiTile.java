@@ -18,18 +18,18 @@ public class WiFiTile extends NetworkTile {
     public WiFiTile(Context context, QuickSettingsController qsc, NetworkController controller) {
         super(context, qsc, controller, R.layout.quick_settings_tile_wifi);
 
-        mOnClick = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                WifiManager wfm = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
-                wfm.setWifiEnabled(!wfm.isWifiEnabled());
-            }
-        };
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                startSettingsActivity(android.provider.Settings.ACTION_WIFI_SETTINGS);
+                WifiManager wfm = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
+                wfm.setWifiEnabled(!wfm.isWifiEnabled());
                 return true;
+            }
+        };
+        mOnClick = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startSettingsActivity(android.provider.Settings.ACTION_WIFI_SETTINGS);
             }
         };
     }

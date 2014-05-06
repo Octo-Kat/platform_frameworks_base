@@ -65,18 +65,18 @@ public class MusicTile extends QuickSettingsTile {
         manager.registerRemoteController(mRemoteController);
         mRemoteController.setArtworkConfiguration(true, 100, 80);
 
-        mOnClick = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-            }
-        };
-
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
+                sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            return true;
+            }
+        };
+
+        mOnClick = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_NEXT);
-                return true;
             }
         };
 
