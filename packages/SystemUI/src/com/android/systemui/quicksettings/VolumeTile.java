@@ -17,22 +17,22 @@ public class VolumeTile extends QuickSettingsTile {
             final QuickSettingsController qsc, Handler handler) {
         super(context, qsc);
 
-        mOnClick = new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                qsc.mBar.collapseAllPanels(true);
-                AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-                am.adjustVolume(AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
-            }
-        };
-
         mOnLongClick = new OnLongClickListener() {
 
             @Override
             public boolean onLongClick(View view) {
-                startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
+                qsc.mBar.collapseAllPanels(true);
+                AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+                am.adjustVolume(AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
                 return true;
+            }
+        };
+
+        mOnClick = new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
             }
         };
     }

@@ -22,9 +22,9 @@ public class AirplaneModeTile extends QuickSettingsTile implements NetworkSignal
 
         mController = controller;
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 // Change the system setting
                 Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
                                         !enabled ? 1 : 0);
@@ -36,14 +36,14 @@ public class AirplaneModeTile extends QuickSettingsTile implements NetworkSignal
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
 
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
-                return true;
             }
         };
     }

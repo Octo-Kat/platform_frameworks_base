@@ -19,25 +19,25 @@ public class SyncTile extends QuickSettingsTile {
     public SyncTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 toggleState();
                 updateResources();
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent("android.settings.SYNC_SETTINGS");
                 intent.addCategory(Intent.CATEGORY_DEFAULT);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startSettingsActivity(intent);
-                return true;
             }
         };
         mHandler = new Handler();

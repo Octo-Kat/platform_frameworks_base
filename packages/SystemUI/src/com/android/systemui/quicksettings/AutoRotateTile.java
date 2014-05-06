@@ -20,21 +20,24 @@ public class AutoRotateTile extends QuickSettingsTile {
     public AutoRotateTile(Context context, QuickSettingsController qsc, Handler handler) {
         super(context, qsc);
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 RotationPolicy.setRotationLock(mContext, getAutoRotation());
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
-                startSettingsActivity(Settings.ACTION_DISPLAY_SETTINGS);
-                return true;
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.setClassName("com.android.settings",
+                    "com.android.settings.Settings$DisplayRotationSettingsActivity");
+                startSettingsActivity(intent);
             }
         };
         qsc.registerObservedContent(Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION)

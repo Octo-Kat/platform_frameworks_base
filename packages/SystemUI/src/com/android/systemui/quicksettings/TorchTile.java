@@ -22,22 +22,22 @@ public class TorchTile extends QuickSettingsTile {
             QuickSettingsController qsc, Handler handler) {
         super(context, qsc);
 
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 Intent i = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
                 mContext.sendBroadcast(i);
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(TorchConstants.INTENT_LAUNCH_APP);
-                return true;
             }
         };
 

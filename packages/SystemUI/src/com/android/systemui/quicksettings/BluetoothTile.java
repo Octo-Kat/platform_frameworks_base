@@ -28,10 +28,10 @@ public class BluetoothTile extends QuickSettingsTile implements BluetoothStateCh
         enabled = mBluetoothAdapter.isEnabled();
         connected = mBluetoothAdapter.getConnectionState() == BluetoothAdapter.STATE_CONNECTED;
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
 
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 if(enabled){
                     mBluetoothAdapter.disable();
                 }else{
@@ -40,15 +40,15 @@ public class BluetoothTile extends QuickSettingsTile implements BluetoothStateCh
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
 
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
-                return true;
             }
         };
         qsc.registerAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED, this);

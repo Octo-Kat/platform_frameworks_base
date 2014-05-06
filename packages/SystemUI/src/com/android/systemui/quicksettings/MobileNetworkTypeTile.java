@@ -50,9 +50,9 @@ public class MobileNetworkTypeTile extends QuickSettingsTile implements NetworkS
 
         mController = controller;
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 int currentMode = getCurrentCMMode();
 
                 Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
@@ -88,17 +88,17 @@ public class MobileNetworkTypeTile extends QuickSettingsTile implements NetworkS
                 }
                 mMode = NETWORK_MODE_UNKNOWN;
                 mContext.sendBroadcast(intent);
+                return true;
             }
         };
 
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.setClassName("com.android.phone", "com.android.phone.Settings");
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startSettingsActivity(intent);
-                return true;
             }
         };
 

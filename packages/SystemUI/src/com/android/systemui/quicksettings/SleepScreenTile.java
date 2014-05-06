@@ -19,21 +19,22 @@ public class SleepScreenTile extends QuickSettingsTile {
     public SleepScreenTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
         pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
+                qsc.mBar.collapseAllPanels(true);
                 pm.goToSleep(SystemClock.uptimeMillis());
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
 
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity("android.settings.DISPLAY_SETTINGS");
-                return true;
             }
         };
     }

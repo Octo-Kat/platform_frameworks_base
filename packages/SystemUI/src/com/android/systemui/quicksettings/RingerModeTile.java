@@ -40,22 +40,22 @@ public class RingerModeTile extends QuickSettingsTile {
         mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
 
         // Tile actions
-        mOnClick = new View.OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 toggleState();
                 updateResources();
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
-                return true;
             }
         };
         qsc.registerAction(AudioManager.RINGER_MODE_CHANGED_ACTION, this);

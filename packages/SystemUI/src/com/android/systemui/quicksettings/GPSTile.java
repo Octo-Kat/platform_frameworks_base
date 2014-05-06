@@ -30,21 +30,21 @@ public class GPSTile extends QuickSettingsTile implements LocationSettingsChange
         mLocationController = new LocationController(mContext);
         mLocationController.addSettingsChangedCallback(this);
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 mLocationController.setLocationEnabled(!mLocationEnabled);
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new OnLongClickListener() {
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 startSettingsActivity(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                return true;
             }
         };
     }

@@ -26,25 +26,25 @@ public class LteTile extends QuickSettingsTile {
 
         mContext = context;
 
-        mOnClick = new OnClickListener() {
+        mOnLongClick = new View.OnLongClickListener() {
             @Override
-            public void onClick(View v) {
+            public boolean onLongClick(View v) {
                 toggleLteState();
                 updateResources();
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
+                return true;
             }
         };
 
-        mOnLongClick = new View.OnLongClickListener() {
+        mOnClick = new OnClickListener() {
             @Override
-            public boolean onLongClick(View v) {
+            public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.setClassName("com.android.phone", "com.android.phone.Settings");
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startSettingsActivity(intent);
-                return true;
             }
         };
 
