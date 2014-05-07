@@ -1248,7 +1248,18 @@ public class PackageParser {
                     verifiers.add(verifier);
                 }
             }
-            
+
+           if (parser.getDepth() == searchDepth && "meta-data".equals(parser.getName())) {
+               for (int i=0; i < parser.getAttributeCount(); i++) {
+                   if ("name".equals(parser.getAttributeName(i)) &&
+                                   ThemeInfo.META_TAG_NAME.equals(parser.getAttributeValue(i))) {
+                       isTheme = true;
+                       installLocation = PackageInfo.INSTALL_LOCATION_INTERNAL_ONLY;
+                       break;
+                   }
+               }
+           }
+
             if (parser.getDepth() == searchDepth && "theme".equals(parser.getName())) {
                 isTheme = true;
                 installLocation = PackageInfo.INSTALL_LOCATION_INTERNAL_ONLY;
