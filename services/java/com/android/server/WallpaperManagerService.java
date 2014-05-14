@@ -295,6 +295,10 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
                 mEngine = null;
                 if (mWallpaper.connection == this) {
                     Slog.w(TAG, "Wallpaper service gone: " + mWallpaper.wallpaperComponent);
+                    if (mWallpaper.wallpaperComponent.equals(IMAGE_WALLPAPER)) {
+                        Slog.w(TAG, "SystemUI wallpaper disconnected, assuming it's being restarted, not clearing wallpaper.");
+                        return;
+                    }
                     if (!mWallpaper.wallpaperUpdating
                             && (mWallpaper.lastDiedTime + MIN_WALLPAPER_CRASH_TIME)
                                 > SystemClock.uptimeMillis()
@@ -591,7 +595,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
     void switchUser(int userId, IRemoteCallback reply) {
         synchronized (mLock) {
             mCurrentUserId = userId;
-            WallpaperData wallpaper = getWallpaperData(userId);
+            WallpaperData wallpaper = mWallpaperMap.get(userId);
             if (wallpaper == null) {
                 wallpaper = new WallpaperData(userId);
                 mWallpaperMap.put(userId, wallpaper);
@@ -657,7 +661,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
         } finally {
             Binder.restoreCallingIdentity(ident);
         }
-
+        
         // This can happen if the default wallpaper component doesn't
         // exist.  This should be a system configuration problem, but
         // let's not let it crash the system and just live with no
@@ -671,6 +675,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
             }
         }
     }
+
     /**
      * @hide
      */
@@ -715,8 +720,13 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
                 Binder.restoreCallingIdentity(ident);
             }
             for (UserInfo user: users) {
-                WallpaperData wd = getWallpaperData(user.id);
-                if (name.equals(wd.name)) {
+                WallpaperData wd = mWallpaperMap.get(user.id);
+                if (wd == null) {
+                    // User hasn't started yet, so load her settings to peek at the wallpaper
+                    loadSettingsLocked(user.id);
+                    wd = mWallpaperMap.get(user.id);
+                }
+                if (wd != null && name.equals(wd.name)) {
                     return true;
                 }
             }
@@ -774,14 +784,14 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
 
     public int getWidthHint() throws RemoteException {
         synchronized (mLock) {
-            WallpaperData wallpaper = getWallpaperData(UserHandle.getCallingUserId());
+            WallpaperData wallpaper = mWallpaperMap.get(UserHandle.getCallingUserId());
             return wallpaper.width;
         }
     }
 
     public int getHeightHint() throws RemoteException {
         synchronized (mLock) {
-            WallpaperData wallpaper = getWallpaperData(UserHandle.getCallingUserId());
+            WallpaperData wallpaper = mWallpaperMap.get(UserHandle.getCallingUserId());
             return wallpaper.height;
         }
     }
@@ -798,7 +808,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
             } else {
                 wallpaperUserId = UserHandle.getUserId(callingUid);
             }
-            WallpaperData wallpaper = getWallpaperData(wallpaperUserId);
+            WallpaperData wallpaper = mWallpaperMap.get(wallpaperUserId);
             try {
                 if (outParams != null) {
                     outParams.putInt("width", wallpaper.width);
@@ -853,7 +863,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
     public WallpaperInfo getWallpaperInfo() {
         int userId = UserHandle.getCallingUserId();
         synchronized (mLock) {
-            WallpaperData wallpaper = getWallpaperData(userId);
+            WallpaperData wallpaper = mWallpaperMap.get(userId);
             if (wallpaper.connection != null) {
                 return wallpaper.connection.mInfo;
             }
@@ -915,7 +925,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
         }
         return null;
     }
-  
+
     public ParcelFileDescriptor setKeyguardWallpaper(String name) {
         checkPermission(android.Manifest.permission.SET_KEYGUARD_WALLPAPER);
         synchronized (mLock) {
@@ -1258,7 +1268,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
             journal.rollback();
         }
     }
- 
+
     private void saveSettingsLocked(KeyguardWallpaperData wallpaper) {
         JournaledFile journal = makeJournaledFile(KEYGUARD_WALLPAPER_INFO, wallpaper.userId);
         FileOutputStream stream = null;
@@ -1304,7 +1314,7 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
 
     private void loadSettingsLocked(int userId) {
         if (DEBUG) Slog.v(TAG, "loadSettingsLocked");
- 
+        
         JournaledFile journal = makeJournaledFile(userId);
         FileInputStream stream = null;
         File file = journal.chooseForRead();
@@ -1595,17 +1605,6 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
             }
         }
         return false;
-    }
-
-    private WallpaperData getWallpaperData(int userId) {
-        WallpaperData wallpaper = mWallpaperMap.get(userId);
-        if (wallpaper == null) {
-            // User hasn't started yet, so load her settings to set desired size.
-            Slog.w(TAG, "Wallpaper not yet initialized, loading settings for user " + userId);
-            loadSettingsLocked(userId);
-            wallpaper = mWallpaperMap.get(userId);
-        }
-        return wallpaper;
     }
 
     @Override
