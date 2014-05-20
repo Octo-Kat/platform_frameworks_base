@@ -334,11 +334,6 @@ public class KeyguardViewManager {
             final int bgHeight = background.getIntrinsicHeight();
             final int vWidth = getWidth();
             final int vHeight = getHeight();
-			
-            if (bgWidth == vWidth && bgHeight == vHeight) {
-                mCustomBackground.setBounds(0, 0, vWidth, vHeight);
-                return;
-            }
 
             final float bgAspect = (float) bgWidth / bgHeight;
             final float vAspect = (float) vWidth / vHeight;
@@ -400,7 +395,7 @@ public class KeyguardViewManager {
             return mUserBackground == null;
         }
 
-        @Override
+       @Override
         public boolean dispatchKeyEvent(KeyEvent event) {
             if (mKeyguardView != null) {
                 // Always process back and menu keys, regardless of focus
@@ -489,7 +484,6 @@ public class KeyguardViewManager {
         if (v != null) {
             mKeyguardHost.removeView(v);
         }
-
         final LayoutInflater inflater = LayoutInflater.from(mContext);
         View view = inflater.inflate(R.layout.keyguard_host_view, mKeyguardHost, true);
         mKeyguardView = (KeyguardHostView) view.findViewById(R.id.keyguard_host_view);
@@ -563,7 +557,7 @@ public class KeyguardViewManager {
         if (show) {
             mWindowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER;
         } else {
-			mWindowLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER;
+            mWindowLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER;
         }
         mWindowLayoutParams.format = show ? PixelFormat.TRANSLUCENT : PixelFormat.OPAQUE;
 
@@ -733,7 +727,7 @@ public class KeyguardViewManager {
             mKeyguardView.showAssistant();
         }
     }
-
+	
     public void showCustomIntent(Intent intent) {
         if (mKeyguardView != null) {
             mKeyguardView.showCustomIntent(intent);
