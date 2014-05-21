@@ -26,19 +26,14 @@ import com.android.server.display.DisplayManagerService;
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.content.ContentResolver;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.ContentObserver;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
@@ -47,15 +42,9 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.text.format.DateUtils;
 import android.util.FloatMath;
-import android.util.Log;
 import android.util.Slog;
 import android.util.Spline;
 import android.util.TimeUtils;
-import android.view.DisplayInfo;
-import android.view.SurfaceControl;
-
-import com.android.internal.policy.impl.keyguard.KeyguardServiceWrapper;
-import com.android.internal.policy.IKeyguardService;
 
 /**
  * Controls the power state of the display.
@@ -185,9 +174,6 @@ final class DisplayPowerController {
     // The display blanker.
     private final DisplayBlanker mDisplayBlanker;
 	
-    // Our context
-    private final Context mContext;
-
     // Our handler.
     private final DisplayControllerHandler mHandler;
 
@@ -365,22 +351,6 @@ final class DisplayPowerController {
     // Twilight changed.  We might recalculate auto-brightness values.
     private boolean mTwilightChanged;
 
-    private KeyguardServiceWrapper mKeyguardService;
-
-    private final ServiceConnection mKeyguardConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mKeyguardService = new KeyguardServiceWrapper(
-                    IKeyguardService.Stub.asInterface(service));
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            mKeyguardService = null;
-        }
-
-    };
-
     /**
      * Creates the display power controller.
      */
@@ -395,7 +365,6 @@ final class DisplayPowerController {
         mDisplayBlanker = displayBlanker;
         mCallbacks = callbacks;
         mCallbackHandler = callbackHandler;
-        mContext = context;
 
         mLights = lights;
         mTwilight = twilight;
@@ -461,14 +430,6 @@ final class DisplayPowerController {
             mTwilight.registerListener(mTwilightListener, mHandler);
         }
 
-        Intent intent = new Intent();
-        intent.setClassName("com.android.keyguard", "com.android.keyguard.KeyguardService");
-        if (!context.bindServiceAsUser(intent, mKeyguardConnection,
-                Context.BIND_AUTO_CREATE, UserHandle.OWNER)) {
-            Log.e(TAG, "*** Keyguard: can't bind to keyguard");
-        } else {
-            Log.e(TAG, "*** Keyguard started");
-        }
     }
 
     private static Spline createAutoBrightnessSpline(int[] lux, int[] brightness) {
@@ -519,9 +480,6 @@ final class DisplayPowerController {
      */
     public boolean requestPowerState(DisplayPowerRequest request,
             boolean waitForNegativeProximity) {
-
-        final int MAX_BLUR_WIDTH = 900;
-        final int MAX_BLUR_HEIGHT = 1600;
 
         if (DEBUG) {
             Slog.d(TAG, "requestPowerState: "
