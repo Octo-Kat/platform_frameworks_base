@@ -17,7 +17,6 @@
 package com.android.internal.policy.impl.keyguard;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
