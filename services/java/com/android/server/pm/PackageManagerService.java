@@ -296,6 +296,7 @@ public class PackageManagerService extends IPackageManager.Stub {
     private static final String REDIRECTIONS_PATH = "/data/app/redirections";
 
     private static final long PACKAGE_HASH_EXPIRATION = 3*60*1000; // 3 minutes
+    private static final long COMMON_RESOURCE_EXPIRATION = 3*60*1000; // 3 minutes
 
     /**
      * IDMAP hash version code used to alter the resulting hash and force recreating
