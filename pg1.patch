@@ -1,0 +1,36 @@
+From a18c654b4fb87dd4d05a43bfe1897011b23350fc Mon Sep 17 00:00:00 2001
+From: Michael Limb <something15525@gmail.com>
+Date: Mon, 11 Nov 2013 10:16:49 -0800
+Subject: [PATCH] PrivacyGuard: add missing @hides to method definitions
+
+Causing DroidDoc compile errors, this fixes it by adding
+a @hide to the respective function definitions.
+
+Change-Id: I27675cd6a75fcc1535c812566e5b9098b11335e1
+---
+ core/java/android/app/AppOpsManager.java | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/java/android/app/AppOpsManager.java b/core/java/android/app/AppOpsManager.java
+index ebf6642..9fa23a1 100644
+--- a/core/java/android/app/AppOpsManager.java
++++ b/core/java/android/app/AppOpsManager.java
+@@ -1134,6 +1134,7 @@ public void finishOp(int op) {
+         finishOp(op, Process.myUid(), mContext.getOpPackageName());
+     }
+ 
++    /** @hide */
+     public boolean getPrivacyGuardSettingForPackage(int uid, String packageName) {
+         try {
+             return mService.getPrivacyGuardSettingForPackage(uid, packageName);
+@@ -1142,6 +1143,7 @@ public boolean getPrivacyGuardSettingForPackage(int uid, String packageName) {
+         return false;
+     }
+ 
++    /** @hide */
+     public void setPrivacyGuardSettingForPackage(int uid, String packageName,
+             boolean state) {
+         try {
+-- 
+1.9.3
+
