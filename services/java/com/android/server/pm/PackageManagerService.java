@@ -5614,6 +5614,10 @@ public class PackageManagerService extends IPackageManager.Stub {
                 }
             }
 
+            if (map.isEmpty()) {
+                mOverlays.remove(target);
+            }
+
             PackageParser.Package targetPkg = mPackages.get(target);
             if (targetPkg != null) {
                 String idmapPath = getIdmapPath(targetPkg, opkg);
@@ -5638,6 +5642,7 @@ public class PackageManagerService extends IPackageManager.Stub {
            String idmapPath = getIdmapPath(appPkg, opkg);
            new File(idmapPath).delete();
         }
+        mOverlays.remove(appPkg.packageName);
     }
 
     private void recursiveDelete(File f) {
