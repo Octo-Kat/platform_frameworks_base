@@ -5538,6 +5538,10 @@ public class PackageManagerService extends IPackageManager.Stub {
             String resPath = ThemeUtils.getResDir(target, opkg);
             recursiveDelete(new File(resPath));
         }
+
+        // Cleanup icons
+        String iconResources = ThemeUtils.getIconPackDir(opkg.packageName);
+        recursiveDelete(new File(iconResources));
     }
 
     private void uninstallThemeForApp(PackageParser.Package appPkg) {
