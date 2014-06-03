@@ -46,6 +46,8 @@ import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
 import android.os.ServiceManager;
+import android.os.SystemProperties;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManagerGlobal;
 
