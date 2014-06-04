@@ -5425,8 +5425,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             int actualHashCode = getPackageHashCode(pkg);
             return storedHashCode != actualHashCode;
         } catch(IOException e) {
-            // all is good enough for government work here,
-            // we'll just return true and the icons will be processed
+            Log.e(TAG, "Could not read hash for " + pkg + "not compiling icon pack", e);
         } finally {
             IoUtils.closeQuietly(in);
             IoUtils.closeQuietly(dataInput);
