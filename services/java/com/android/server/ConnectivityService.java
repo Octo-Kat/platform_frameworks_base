@@ -2365,6 +2365,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
             // Don't do this - if we never sign in stay, grey
             //reportNetworkCondition(mActiveDefaultNetwork, 100);
             updateNetworkSettings(thisNet);
+            updateNetworkSettings(thisNet);
         }
         thisNet.setTeardownRequested(false);
         updateMtuSizeSettings(thisNet);

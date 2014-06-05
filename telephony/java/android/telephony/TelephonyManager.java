@@ -28,6 +28,7 @@ import android.os.ServiceManager;
 import android.os.SystemProperties;
 import android.telephony.Rlog;
 import android.util.Log;
+import android.util.Log;
 
 import com.android.internal.telephony.IPhoneSubInfo;
 import com.android.internal.telephony.ITelephony;
