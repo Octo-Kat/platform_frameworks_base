@@ -3353,6 +3353,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         mStatusBarContainer.addView(mStatusBarWindow);
 
         updateExpandedViewPos(EXPANDED_LEAVE_ALONE);
+        checkBarModes();
         restorePieTriggerMask();
         mRecreating = false;
     }
