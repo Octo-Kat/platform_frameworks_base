@@ -16,6 +16,8 @@
 
 package com.android.server.power;
 
+import java.io.PrintWriter;
+
 import com.android.server.LightsService;
 import com.android.server.TwilightService;
 import com.android.server.TwilightService.TwilightState;
@@ -23,7 +25,9 @@ import com.android.server.display.DisplayManagerService;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -34,13 +38,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.SystemClock;
+import android.os.UserHandle;
+import android.provider.Settings;
 import android.text.format.DateUtils;
 import android.util.FloatMath;
 import android.util.Slog;
 import android.util.Spline;
 import android.util.TimeUtils;
-
-import java.io.PrintWriter;
 
 /**
  * Controls the power state of the display.
@@ -169,7 +173,7 @@ final class DisplayPowerController {
 
     // The display blanker.
     private final DisplayBlanker mDisplayBlanker;
-
+	
     // Our handler.
     private final DisplayControllerHandler mHandler;
 
@@ -425,6 +429,7 @@ final class DisplayPowerController {
         if (mUseSoftwareAutoBrightnessConfig && USE_TWILIGHT_ADJUSTMENT) {
             mTwilight.registerListener(mTwilightListener, mHandler);
         }
+
     }
 
     private static Spline createAutoBrightnessSpline(int[] lux, int[] brightness) {
@@ -475,6 +480,7 @@ final class DisplayPowerController {
      */
     public boolean requestPowerState(DisplayPowerRequest request,
             boolean waitForNegativeProximity) {
+
         if (DEBUG) {
             Slog.d(TAG, "requestPowerState: "
                     + request + ", waitForNegativeProximity=" + waitForNegativeProximity);
@@ -542,6 +548,12 @@ final class DisplayPowerController {
 
         mScreenBrightnessRampAnimator = new RampAnimator<DisplayPowerState>(
                 mPowerState, DisplayPowerState.SCREEN_BRIGHTNESS);
+
+        if (mPowerState.isScreenOn()) {
+            // If the screen is on then let the notifier know to ensure that
+            // battery stats after a boot are correct.
+            mNotifier.onScreenOn();
+        }
     }
 
     private final Animator.AnimatorListener mAnimatorListener = new Animator.AnimatorListener() {
@@ -777,6 +789,7 @@ final class DisplayPowerController {
             if (on) {
                 mNotifier.onScreenOn();
             } else {
+                mLights.getLight(LightsService.LIGHT_ID_BUTTONS).setBrightness(0);
                 mNotifier.onScreenOff();
             }
         }

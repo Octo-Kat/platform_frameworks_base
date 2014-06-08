@@ -5795,14 +5795,14 @@ class BackupManagerService extends IBackupManager.Stub {
             skip = true;
         }
 
-        // Do we have a transport to fetch data for us?
-        IBackupTransport transport = getTransport(mCurrentTransport);
-        if (transport == null) {
-            if (DEBUG) Slog.w(TAG, "No transport");
-            skip = true;
-        }
+        if (mAutoRestore && mProvisioned && restoreSet != 0) {
+            // Do we have a transport to fetch data for us?
+            IBackupTransport transport = getTransport(mCurrentTransport);
+            if (transport == null) {
+                if (DEBUG) Slog.w(TAG, "No transport for install-time restore");
+                return;
+            }
 
-        if (!skip && mAutoRestore && mProvisioned) {
             try {
                 // okay, we're going to attempt a restore of this package from this restore set.
                 // The eventual message back into the Package Manager to run the post-install
@@ -5824,12 +5824,9 @@ class BackupManagerService extends IBackupManager.Stub {
                 mBackupHandler.sendMessage(msg);
             } catch (RemoteException e) {
                 // Binding to the transport broke; back off and proceed with the installation.
-                Slog.e(TAG, "Unable to contact transport");
-                skip = true;
+                Slog.e(TAG, "Unable to contact transport for install-time restore");
             }
-        }
-
-        if (skip) {
+        } else {
             // Auto-restore disabled or no way to attempt a restore; just tell the Package
             // Manager to proceed with the post-install handling for this package.
             if (DEBUG) Slog.v(TAG, "Skipping");

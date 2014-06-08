@@ -254,6 +254,8 @@
     <protected-broadcast
         android:name="com.android.server.connectivityservice.CONNECTED_TO_PROVISIONING_NETWORK_ACTION" />
 
+    <protected-broadcast android:name="org.cyanogenmod.intent.action.THEME_CHANGED" />
+
     <!-- ====================================== -->
     <!-- Permissions for things that cost money -->
     <!-- ====================================== -->
@@ -1360,6 +1362,22 @@
         android:protectionLevel="normal"
         android:label="@string/permlab_setWallpaper"
         android:description="@string/permdesc_setWallpaper" />
+        
+    <!-- Allows applications to set the keyguard wallpaper
+         @hide -->
+    <permission android:name="android.permission.SET_KEYGUARD_WALLPAPER"
+        android:permissionGroup="android.permission-group.WALLPAPER"
+        android:protectionLevel="normal"
+        android:label="@string/permlab_setKeyguardWallpaper"
+        android:description="@string/permdesc_setKeyguardWallpaper" />
+
+    <!-- Allows applications to set the keyguard wallpaper
+         @hide -->
+    <permission android:name="android.permission.SET_KEYGUARD_WALLPAPER"
+        android:permissionGroup="android.permission-group.WALLPAPER"
+        android:protectionLevel="normal"
+        android:label="@string/permlab_setKeyguardWallpaper"
+        android:description="@string/permdesc_setKeyguardWallpaper" />
 
     <!-- Allows applications to set the wallpaper hints -->
     <permission android:name="android.permission.SET_WALLPAPER_HINTS"
@@ -2382,6 +2400,26 @@
         android:description="@string/permlab_copyProtectedData"
         android:protectionLevel="signature" />
 
+    <!-- Permission for reading writing revoked permissions
+         @hide -->
+    <permission android:name="android.permission.REVOKE_PERMISSIONS"
+        android:label="@string/permlab_revokePermissions"
+        android:description="@string/permdesc_revokePermissions"
+        android:protectionLevel="signature" />
+
+    <!-- Permission for reading writing revoked permissions
+         @hide -->
+    <permission android:name="android.permission.ACCESS_THEME_SERVICE"
+        android:label="@string/permlab_accessThemeService"
+        android:description="@string/permdesc_accessThemeService"
+        android:protectionLevel="signature" />
+
+    <!-- Internal permission protecting access to internal notification listener
+        @hide
+    -->
+    <permission android:name="android.permission.SYSTEM_NOTIFICATION_LISTENER"
+        android:protectionLevel="signature|system" />
+
     <!-- Internal permission protecting access to the encryption methods
         @hide
     -->
@@ -2514,6 +2552,37 @@
         android:description="@string/permdesc_accessNetworkConditions"
         android:protectionLevel="signature|system" />
 
+    <!-- Allows an application to record the screen.
+         @hide This is not a third-party API (intended for system apps). -->
+    <permission android:name="android.permission.RECORD_SCREEN"
+        android:label="@string/permlab_recordScreen"
+        android:description="@string/permdesc_recordScreen"
+        android:protectionLevel="signature|system" />
+
+    <!-- Allows an application to use the Theme Service
+         @hide -->
+    <permission android:name="android.permission.ACCESS_THEME_MANAGER"
+        android:label="@string/permlab_accessThemeService"
+        android:description="@string/permdesc_accessThemeService"
+        android:protectionLevel="signature" />
+
+    <!-- Allows an application to read the current theme configuration and
+         get information about the various themes currently installed
+         @hide -->
+    <permission android:name="android.permission.READ_THEMES"
+        android:label="@string/permlab_readThemes"
+        android:description="@string/permdesc_readThemesDesc"
+        android:protectionLevel="normal" />
+
+    <!-- Allows an application to write the current theme configuration and
+         write information about the various themes currently installed.
+         Changing themes should be done through the service ACCESS_THEME_MANAGER
+         @hide -->
+    <permission android:name="android.permission.WRITE_THEMES"
+        android:label="@string/permlab_writeThemes"
+        android:description="@string/permdesc_writeThemesDesc"
+        android:protectionLevel="signature" />
+
     <!-- The system process is explicitly the only one allowed to launch the
          confirmation UI for full backup/restore -->
     <uses-permission android:name="android.permission.CONFIRM_FULL_BACKUP"/>
@@ -2542,6 +2611,10 @@
                 android:label="@string/heavy_weight_switcher_title"
                 android:finishOnCloseSystemDialogs="true"
                 android:excludeFromRecents="true"
+                android:process=":ui">
+        </activity>
+        <activity android:name="com.android.internal.app.OctLogoActivity"
+                android:theme="@style/Theme.Wallpaper.NoTitleBar.Fullscreen"
                 android:process=":ui">
         </activity>
         <activity android:name="com.android.internal.app.PlatLogoActivity"
@@ -2680,6 +2753,18 @@
                 <!-- MCS always uses REMOTE_INTENT: category=MASTER_CLEAR -->
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
                 <category android:name="android.intent.category.MASTER_CLEAR" />
+            </intent-filter>
+        </receiver>
+        
+        <receiver android:name="com.android.server.AppsLaunchFailureReceiver" >
+            <intent-filter>
+                <action android:name="com.tmobile.intent.action.APP_LAUNCH_FAILURE" />
+                <action android:name="com.tmobile.intent.action.APP_LAUNCH_FAILURE_RESET" />
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="org.cyanogenmod.intent.action.THEME_CHANGED" />
+                <category android:name="com.tmobile.intent.category.THEME_PACKAGE_INSTALL_STATE_CHANGE" />
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
 

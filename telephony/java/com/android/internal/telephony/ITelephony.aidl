@@ -48,6 +48,12 @@ interface ITelephony {
     void call(String callingPackage, String number);
 
     /**
+     * Toggle between 3G and LTE (NT_MODE_CDMA, NT_MODE_GLOBAL)
+     * @param boolean to turn on and off LTE
+     */
+    void toggleLTE(boolean on);
+
+    /**
      * If there is currently a call in progress, show the call screen.
      * The DTMF dialpad may or may not be visible initially, depending on
      * whether it was up when the user last exited the InCallScreen.
@@ -328,47 +334,6 @@ interface ITelephony {
      */
     void setCellInfoListRate(int rateInMillis);
 
-    /**
-     * Put a call on hold.
-     */
-     void toggleHold();
-
-     /**
-      * Merge foreground and background calls.
-      */
-     void merge();
-
-     /**
-      * Swap foreground and background calls.
-      */
-     void swap();
-
-     /**
-      * Mute the phone.
-      */
-     void mute(boolean mute);
-
-    /**
-     * Start playing DTMF tone for the specified digit.
-     *
-     * @param digit the digit that corresponds with the desired tone.
-     * @param timedShortcode whether the specified digit should be played as a timed short code.
-     */
-     void playDtmfTone(char digit, boolean timedShortCode);
-
-     /**
-      * Stop playing DTMF tones.
-      */
-     void stopDtmfTone();
-
-     /**
-       * Register a callback.
-       */
-      void addListener(ITelephonyListener listener);
-
-      /**
-       * Unregister a callback.
-       */
-      void removeListener(ITelephonyListener listener);
+    int getLteOnGsmMode();
 }
 

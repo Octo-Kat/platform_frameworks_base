@@ -77,6 +77,7 @@ import android.net.RouteInfo;
 import android.net.SamplingDataTracker;
 import android.net.Uri;
 import android.net.wifi.WifiStateTracker;
+import android.net.wimax.WimaxHelper;
 import android.net.wimax.WimaxManagerConstants;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -116,6 +117,7 @@ import com.android.internal.telephony.DctConstants;
 import com.android.internal.telephony.Phone;
 import com.android.internal.telephony.PhoneConstants;
 import com.android.internal.util.IndentingPrintWriter;
+import com.android.server.AlarmManagerService;
 import com.android.internal.util.XmlUtils;
 import com.android.server.am.BatteryStatsService;
 import com.android.server.connectivity.DataConnectionStats;
@@ -125,6 +127,7 @@ import com.android.server.connectivity.Tethering;
 import com.android.server.connectivity.Vpn;
 import com.android.server.net.BaseNetworkObserver;
 import com.android.server.net.LockdownVpnTracker;
+import com.android.server.power.PowerManagerService;
 import com.google.android.collect.Lists;
 import com.google.android.collect.Sets;
 
@@ -756,8 +759,6 @@ public class ConnectivityService extends IConnectivityManager.Stub {
         Class wimaxStateTrackerClass = null;
         Class wimaxServiceClass = null;
         Class wimaxManagerClass;
-        String wimaxJarLocation;
-        String wimaxLibLocation;
         String wimaxManagerClassName;
         String wimaxServiceClassName;
         String wimaxStateTrackerClassName;
@@ -769,10 +770,6 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 
         if (isWimaxEnabled) {
             try {
-                wimaxJarLocation = context.getResources().getString(
-                        com.android.internal.R.string.config_wimaxServiceJarLocation);
-                wimaxLibLocation = context.getResources().getString(
-                        com.android.internal.R.string.config_wimaxNativeLibLocation);
                 wimaxManagerClassName = context.getResources().getString(
                         com.android.internal.R.string.config_wimaxManagerClassname);
                 wimaxServiceClassName = context.getResources().getString(
@@ -780,10 +777,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                 wimaxStateTrackerClassName = context.getResources().getString(
                         com.android.internal.R.string.config_wimaxStateTrackerClassname);
 
-                if (DBG) log("wimaxJarLocation: " + wimaxJarLocation);
-                wimaxClassLoader =  new DexClassLoader(wimaxJarLocation,
-                        new ContextWrapper(context).getCacheDir().getAbsolutePath(),
-                        wimaxLibLocation, ClassLoader.getSystemClassLoader());
+                wimaxClassLoader = WimaxHelper.getWimaxClassLoader(context);
 
                 try {
                     wimaxManagerClass = wimaxClassLoader.loadClass(wimaxManagerClassName);
@@ -2619,7 +2613,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
         if (TextUtils.equals(mNetTrackers[netType].getNetworkInfo().getReason(),
                              PhoneConstants.REASON_LINK_PROPERTIES_CHANGED)) {
             if (isTetheringSupported()) {
-                mTethering.handleTetherIfaceChange();
+                mTethering.handleTetherIfaceChange(mNetTrackers[netType].getNetworkInfo());
             }
         }
     }
@@ -3997,6 +3991,23 @@ public class ConnectivityService extends IConnectivityManager.Stub {
             }
         }
         return ConnectivityManager.TYPE_NONE;
+    }
+
+    protected void updateBlockedUids(int uid, boolean isBlocked) {
+        try {
+            AlarmManagerService mAlarmMgrSvc =
+                (AlarmManagerService)ServiceManager.getService(Context.ALARM_SERVICE);
+            mAlarmMgrSvc.updateBlockedUids(uid,isBlocked);
+        } catch (NullPointerException e) {
+            Slog.w(TAG, "Could Not Update blocked Uids with alarmManager" + e);
+        }
+        try {
+            PowerManagerService mPowerMgrSvc =
+                (PowerManagerService)ServiceManager.getService(Context.POWER_SERVICE);
+            mPowerMgrSvc.updateBlockedUids(uid,isBlocked);
+        } catch (NullPointerException e) {
+            Slog.w(TAG, "Could Not Update blocked Uids with powerManager" + e);
+        }
     }
 
     /**

@@ -23,6 +23,8 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Configuration;
 import android.content.res.XmlResourceParser;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -72,7 +74,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // database gets upgraded properly. At a minimum, please confirm that 'upgradeVersion'
     // is properly propagated through your change.  Not doing so will result in a loss of user
     // settings.
-    private static final int DATABASE_VERSION = 98;
+    private static final int DATABASE_VERSION = 99;
 
     private Context mContext;
     private int mUserHandle;
@@ -1559,31 +1561,57 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             upgradeVersion = 98;
         }
 
+        if (upgradeVersion == 98) {
+            db.beginTransaction();
+            SQLiteStatement stmt = null;
+            try {
+                stmt = db.compileStatement("INSERT OR IGNORE INTO secure(name,value) VALUES(?,?);");
+                loadDefaultThemeSettings(stmt);
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+                if (stmt != null) stmt.close();
+            }
+            upgradeVersion = 99;
+        }
+
         // *** Remember to update DATABASE_VERSION above!
 
         if (upgradeVersion != currentVersion) {
             Log.w(TAG, "Got stuck trying to upgrade from version " + upgradeVersion
                     + ", must wipe the settings provider");
-            db.execSQL("DROP TABLE IF EXISTS global");
-            db.execSQL("DROP TABLE IF EXISTS globalIndex1");
-            db.execSQL("DROP TABLE IF EXISTS system");
-            db.execSQL("DROP INDEX IF EXISTS systemIndex1");
-            db.execSQL("DROP TABLE IF EXISTS secure");
-            db.execSQL("DROP INDEX IF EXISTS secureIndex1");
-            db.execSQL("DROP TABLE IF EXISTS gservices");
-            db.execSQL("DROP INDEX IF EXISTS gservicesIndex1");
-            db.execSQL("DROP TABLE IF EXISTS bluetooth_devices");
-            db.execSQL("DROP TABLE IF EXISTS bookmarks");
-            db.execSQL("DROP INDEX IF EXISTS bookmarksIndex1");
-            db.execSQL("DROP INDEX IF EXISTS bookmarksIndex2");
-            db.execSQL("DROP TABLE IF EXISTS favorites");
-            onCreate(db);
-
-            // Added for diagnosing settings.db wipes after the fact
-            String wipeReason = oldVersion + "/" + upgradeVersion + "/" + currentVersion;
-            db.execSQL("INSERT INTO secure(name,value) values('" +
-                    "wiped_db_reason" + "','" + wipeReason + "');");
+            wipeDB(db, oldVersion, upgradeVersion, currentVersion);
         }
+    }
+
+    private void wipeDB(SQLiteDatabase db, int oldVersion, int upgradeVersion,
+     int currentVersion) {
+        db.execSQL("DROP TABLE IF EXISTS global");
+        db.execSQL("DROP TABLE IF EXISTS globalIndex1");
+        db.execSQL("DROP TABLE IF EXISTS system");
+        db.execSQL("DROP INDEX IF EXISTS systemIndex1");
+        db.execSQL("DROP TABLE IF EXISTS secure");
+        db.execSQL("DROP INDEX IF EXISTS secureIndex1");
+        db.execSQL("DROP TABLE IF EXISTS gservices");
+        db.execSQL("DROP INDEX IF EXISTS gservicesIndex1");
+        db.execSQL("DROP TABLE IF EXISTS bluetooth_devices");
+        db.execSQL("DROP TABLE IF EXISTS bookmarks");
+        db.execSQL("DROP INDEX IF EXISTS bookmarksIndex1");
+        db.execSQL("DROP INDEX IF EXISTS bookmarksIndex2");
+        db.execSQL("DROP TABLE IF EXISTS favorites");
+        onCreate(db);
+
+        // Added for diagnosing settings.db wipes after the fact
+        String wipeReason = oldVersion + "/" + upgradeVersion + "/" + currentVersion;
+        db.execSQL("INSERT INTO secure(name,value) values('" +
+                "wiped_db_reason" + "','" + wipeReason + "');");
+    }
+
+    @Override
+    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Not much can be done here - wipe database completely and create anew
+        // otherwise an exception will be thrown on boot preventing startup.
+        wipeDB(db, oldVersion, newVersion, oldVersion);
     }
 
     private String[] hashsetToStringArray(HashSet<String> set) {
@@ -2030,6 +2058,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 R.bool.def_haptic_feedback);
     }
 
+    private void loadDefaultThemeSettings(SQLiteStatement stmt) {
+        loadStringSetting(stmt, Settings.Secure.DEFAULT_THEME_PACKAGE, R.string.def_theme_package);
+        loadStringSetting(stmt, Settings.Secure.DEFAULT_THEME_COMPONENTS,
+                R.string.def_theme_components);
+    }
+
     private void loadSecureSettings(SQLiteDatabase db) {
         SQLiteStatement stmt = null;
         try {
@@ -2114,6 +2148,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             loadBooleanSetting(stmt, Settings.Secure.USER_SETUP_COMPLETE,
                     R.bool.def_user_setup_complete);
+
+            loadDefaultThemeSettings(stmt);
         } finally {
             if (stmt != null) stmt.close();
         }
@@ -2273,6 +2309,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             loadIntegerSetting(stmt, Settings.Global.LOW_BATTERY_SOUND_TIMEOUT,
                     R.integer.def_low_battery_sound_timeout);
+
+            loadIntegerSetting(stmt, Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE,
+                    R.integer.def_wifi_scan_always_available);
 
             // --- New global settings start here
         } finally {

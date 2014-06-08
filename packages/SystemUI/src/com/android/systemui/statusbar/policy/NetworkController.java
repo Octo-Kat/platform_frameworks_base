@@ -155,6 +155,8 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
 
     boolean mDataAndWifiStacked = false;
 
+    private UpdateUIListener mUpdateUIListener = null;
+
     public interface SignalCluster {
         void setWifiIndicators(boolean visible, int strengthIcon,
                 String contentDescription);
@@ -220,6 +222,7 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
 
         // broadcasts
         IntentFilter filter = new IntentFilter();
+        filter.addAction("com.android.settings.LABEL_CHANGED");
         filter.addAction(WifiManager.RSSI_CHANGED_ACTION);
         filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
@@ -280,6 +283,10 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
     public void addNetworkSignalChangedCallback(NetworkSignalChangedCallback cb) {
         mSignalsChangedCallbacks.add(cb);
         notifySignalsChangedCallbacks(cb);
+    }
+
+    public void removeNetworkSignalChangedCallback(NetworkSignalChangedCallback cb) {
+        mSignalsChangedCallbacks.remove(cb);
     }
 
     public void refreshSignalCluster(SignalCluster cluster) {
@@ -373,6 +380,8 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         } else if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION) ||
                  action.equals(ConnectivityManager.INET_CONDITION_ACTION)) {
             updateConnectivity(intent);
+            refreshViews();
+        } else if (action.equals("com.android.settings.LABEL_CHANGED")) {
             refreshViews();
         } else if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
             refreshLocale();
@@ -603,7 +612,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                 case TelephonyManager.NETWORK_TYPE_HSDPA:
                 case TelephonyManager.NETWORK_TYPE_HSUPA:
                 case TelephonyManager.NETWORK_TYPE_HSPA:
-                case TelephonyManager.NETWORK_TYPE_HSPAP:
                     if (mHspaDataDistinguishable) {
                         mDataIconList = TelephonyIcons.DATA_H[mInetCondition];
                         mDataTypeIconId = R.drawable.stat_sys_data_fully_connected_h;
@@ -617,6 +625,13 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                         mContentDescriptionDataType = mContext.getString(
                                 R.string.accessibility_data_connection_3g);
                     }
+                    break;
+                case TelephonyManager.NETWORK_TYPE_HSPAP:
+                    mDataIconList = TelephonyIcons.DATA_HP[mInetCondition];
+                    mDataTypeIconId = R.drawable.stat_sys_data_fully_connected_hp;
+                    mQSDataTypeIconId = TelephonyIcons.QS_DATA_HP[mInetCondition];
+                    mContentDescriptionDataType = mContext.getString(
+                            R.string.accessibility_data_connection_HP);
                     break;
                 case TelephonyManager.NETWORK_TYPE_CDMA:
                     if (!mShowAtLeastThreeGees) {
@@ -652,7 +667,9 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                             R.string.accessibility_data_connection_3g);
                     break;
                 case TelephonyManager.NETWORK_TYPE_LTE:
-                    boolean show4GforLTE = mContext.getResources().getBoolean(R.bool.config_show4GForLTE);
+                    boolean defValue = mContext.getResources().getBoolean(R.bool.config_show4GForLTE);
+                    boolean show4GforLTE = Settings.System.getBoolean(mContext.getContentResolver(),
+                                Settings.System.SHOW_LTE_OR_FOURGEE, defValue);
                     if (show4GforLTE) {
                         mDataIconList = TelephonyIcons.DATA_4G[mInetCondition];
                         mDataTypeIconId = R.drawable.stat_sys_data_fully_connected_4g;
@@ -990,6 +1007,8 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         String mobileLabel = "";
         int N;
         final boolean emergencyOnly = isEmergencyOnly();
+        final String customLabel = Settings.System.getString(mContext.getContentResolver(),
+                Settings.System.CUSTOM_CARRIER_LABEL);
 
         if (!mHasMobileDataFeature) {
             mDataSignalIconId = mPhoneSignalIconId = 0;
@@ -1110,6 +1129,11 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                 mDataTypeIconId = R.drawable.stat_sys_data_fully_connected_roam;
                 mQSDataTypeIconId = TelephonyIcons.QS_DATA_R[mInetCondition];
             }
+        }
+
+        if (customLabel != null && customLabel.length() > 0) {
+            combinedLabel = customLabel;
+            mobileLabel = customLabel;
         }
 
         if (DEBUG) {
@@ -1237,6 +1261,11 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                 v.setText(mobileLabel); // comes from the telephony stack
                 v.setVisibility(View.VISIBLE);
             }
+        }
+
+        // Update the dependency UI
+        if (mUpdateUIListener != null) {
+            mUpdateUIListener.onUpdateUI();
         }
     }
 
@@ -1462,5 +1491,16 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                 }
             }
         }
+    }
+
+    /**
+     * Let others listen for UI updates in NetworkController.
+     */
+    public static interface UpdateUIListener {
+        void onUpdateUI();
+    }
+
+    public void setListener(UpdateUIListener listener) {
+        mUpdateUIListener = listener;
     }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -149,6 +150,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     // This is subtracted from the end of the screen off timeout so the
     // minimum screen off timeout should be longer than this.
     private static final int SCREEN_DIM_DURATION = 7 * 1000;
+    private static final int BUTTON_ON_DURATION = 5 * 1000;
 
     // The maximum screen dim time expressed as a ratio relative to the screen
     // off timeout.  If the screen off timeout is very short then we want the
@@ -182,6 +184,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     private SettingsObserver mSettingsObserver;
     private DreamManagerService mDreamManager;
     private LightsService.Light mAttentionLight;
+    private LightsService.Light mButtonsLight;
 
     private final Object mLock = new Object();
 
@@ -368,6 +371,9 @@ public final class PowerManagerService extends IPowerManager.Stub
     // Time when we last logged a warning about calling userActivity() without permission.
     private long mLastWarningAboutUserActivityPermission = Long.MIN_VALUE;
 
+    //track the blocked uids.
+    private final ArrayList<Integer> mBlockedUids = new ArrayList<Integer>();
+
     private native void nativeInit();
 
     private static native void nativeSetPowerState(boolean screenOn, boolean screenBright);
@@ -457,6 +463,7 @@ public final class PowerManagerService extends IPowerManager.Stub
                     mHandler);
             mSettingsObserver = new SettingsObserver(mHandler);
             mAttentionLight = mLightsService.getLight(LightsService.LIGHT_ID_ATTENTION);
+            mButtonsLight = mLightsService.getLight(LightsService.LIGHT_ID_BUTTONS);
 
             // Register for broadcasts from other components of the system.
             IntentFilter filter = new IntentFilter();
@@ -617,6 +624,15 @@ public final class PowerManagerService extends IPowerManager.Stub
     private void acquireWakeLockInternal(IBinder lock, int flags, String tag, String packageName,
             WorkSource ws, int uid, int pid) {
         synchronized (mLock) {
+            if(mBlockedUids.contains(new Integer(uid)) && uid != Process.myUid()) {
+                //wakelock acquisition for blocked uid, do not acquire.
+                if (DEBUG_SPEW) {
+                    Slog.d(TAG, "uid is blocked not acquiring wakeLock flags=0x" +
+                        Integer.toHexString(flags) + " tag=" + tag + " uid=" + uid +
+                        " pid =" + pid);
+                }
+                return;
+            }
             if (DEBUG_SPEW) {
                 Slog.d(TAG, "acquireWakeLockInternal: lock=" + Objects.hashCode(lock)
                         + ", flags=0x" + Integer.toHexString(flags)
@@ -786,12 +802,18 @@ public final class PowerManagerService extends IPowerManager.Stub
     private void updateWakeLockWorkSourceInternal(IBinder lock, WorkSource ws) {
         synchronized (mLock) {
             int index = findWakeLockIndexLocked(lock);
+            int value = SystemProperties.getInt("persist.cne.feature", 0);
+            boolean isNsrmEnabled = (value == 4 || value == 5 || value == 6);
             if (index < 0) {
                 if (DEBUG_SPEW) {
                     Slog.d(TAG, "updateWakeLockWorkSourceInternal: lock=" + Objects.hashCode(lock)
                             + " [not found], ws=" + ws);
                 }
-                throw new IllegalArgumentException("Wake lock not active");
+                if (!isNsrmEnabled) {
+                    throw new IllegalArgumentException("Wake lock not active");
+                } else {
+                    return;
+                }
             }
 
             WakeLock wakeLock = mWakeLocks.get(index);
@@ -806,6 +828,47 @@ public final class PowerManagerService extends IPowerManager.Stub
                 notifyWakeLockAcquiredLocked(wakeLock);
             }
         }
+    }
+
+    /* updates the blocked uids, so if a wake lock is acquired for it
+     * can be released.
+     */
+    public void updateBlockedUids(int uid, boolean isBlocked) {
+        synchronized(mLock) {
+            if (DEBUG_SPEW) Slog.v(TAG, "updateBlockedUids: uid = "+uid +"isBlocked = "+isBlocked);
+            if(isBlocked) {
+                mBlockedUids.add(new Integer(uid));
+                for (int index = 0; index < mWakeLocks.size(); index++) {
+                    WakeLock wl = mWakeLocks.get(index);
+                    if(wl != null) {
+                        // release the wakelock for the blocked uid
+                        if (wl.mOwnerUid == uid || checkWorkSourceObjectId(uid, wl)) {
+                            releaseWakeLockInternal(wl.mLock, wl.mFlags);
+                            index--;
+                            if (DEBUG_SPEW) Slog.v(TAG, "Internally releasing it");
+                        }
+                    }
+                }
+            }
+            else {
+                mBlockedUids.remove(new Integer(uid));
+            }
+        }
+    }
+
+    private boolean checkWorkSourceObjectId(int uid, WakeLock wl) {
+        try {
+            for (int index = 0; index < wl.mWorkSource.size(); index++) {
+                if (uid == wl.mWorkSource.get(index)) {
+                    if (DEBUG_SPEW) Slog.v(TAG, "WS uid matched");
+                    return true;
+                }
+            }
+        }
+        catch (Exception e) {
+            return false;
+        }
+        return false;
     }
 
     private int findWakeLockIndexLocked(IBinder lock) {
@@ -1368,6 +1431,12 @@ public final class PowerManagerService extends IPowerManager.Stub
                     nextTimeout = mLastUserActivityTime
                             + screenOffTimeout - screenDimDuration;
                     if (now < nextTimeout) {
+                        if (now > mLastUserActivityTime + BUTTON_ON_DURATION) {
+                            mButtonsLight.setBrightness(0);
+                        } else {
+                            mButtonsLight.setBrightness(mDisplayPowerRequest.screenBrightness);
+                            nextTimeout = now + BUTTON_ON_DURATION;
+                        }
                         mUserActivitySummary |= USER_ACTIVITY_SCREEN_BRIGHT;
                     } else {
                         nextTimeout = mLastUserActivityTime + screenOffTimeout;

@@ -47,6 +47,8 @@ import android.os.Debug;
 import android.os.SystemProperties;
 import android.os.Environment;
 
+import libcore.io.IoUtils;
+
 /**
  * The VideoEditor implementation {@hide}
  */
@@ -1834,10 +1836,20 @@ public class VideoEditorImpl implements VideoEditor {
             String filename = mI.getFilename();
             if (mI instanceof MediaVideoItem) {
                 MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                retriever.setDataSource(filename);
-                Bitmap bitmap = retriever.getFrameAtTime();
-                retriever.release();
-                retriever = null;
+                Bitmap bitmap = null;
+                try {
+                    retriever.setDataSource(filename);
+                    bitmap = retriever.getFrameAtTime();
+                } catch (RuntimeException ex) {
+                    // Ignore failures while cleaning up.
+                } finally {
+                    try {
+                        retriever.release();
+                    } catch (RuntimeException ex) {
+                        // Ignore failures while cleaning up.
+                    }
+                }
+
                 if (bitmap == null) {
                     String msg = "Thumbnail extraction from " +
                                     filename + " failed";
@@ -1859,15 +1871,15 @@ public class VideoEditorImpl implements VideoEditor {
                 }
             }
 
+            FileOutputStream stream = null;
             try {
-                FileOutputStream stream = new FileOutputStream(mProjectPath + "/"
-                                                          + THUMBNAIL_FILENAME);
+                stream = new FileOutputStream(mProjectPath + "/" + THUMBNAIL_FILENAME);
                 projectBitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
                 stream.flush();
-                stream.close();
             } catch (IOException e) {
                 throw new IllegalArgumentException ("Error creating project thumbnail");
             } finally {
+                IoUtils.closeQuietly(stream);
                 projectBitmap.recycle();
             }
         }

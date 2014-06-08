@@ -23,6 +23,7 @@ import static com.android.server.am.ActivityStackSupervisor.HOME_STACK_ID;
 import static android.view.WindowManagerPolicy.FINISH_LAYOUT_REDO_WALLPAPER;
 
 import android.app.AppOpsManager;
+import android.content.pm.ThemeUtils;
 import android.util.TimeUtils;
 import android.view.IWindowId;
 
@@ -46,6 +47,7 @@ import com.android.server.power.ShutdownThread;
 
 import android.Manifest;
 import android.app.ActivityManager.StackBoxInfo;
+import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.StatusBarManager;
@@ -151,6 +153,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.List;
 
 /** {@hide} */
@@ -295,6 +298,12 @@ public class WindowManagerService extends IWindowManager.Stub
 
     private final boolean mHeadless;
 
+    private BroadcastReceiver mThemeChangeReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            mUiContext = null;
+        }
+    };
+ 
     final BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -310,6 +319,7 @@ public class WindowManagerService extends IWindowManager.Stub
     int mCurrentUserId;
 
     final Context mContext;
+    private Context mUiContext;
 
     final boolean mHaveInputMethods;
 
@@ -528,6 +538,10 @@ public class WindowManagerService extends IWindowManager.Stub
     float mLastWallpaperY = -1;
     float mLastWallpaperXStep = -1;
     float mLastWallpaperYStep = -1;
+    float mlastWallpaperOverscrollX = -1;
+    float mlastWallpaperOverscrollY = -1;
+    int mLastWallpaperOverscrollXMax = -1;
+    int mLastWallpaperOverscrollYMax = -1;
     // This is set when we are waiting for a wallpaper to tell us it is done
     // changing its scroll position.
     WindowState mWaitingOnWallpaper;
@@ -809,6 +823,15 @@ public class WindowManagerService extends IWindowManager.Stub
         } finally {
             SurfaceControl.closeTransaction();
         }
+        
+        ThemeUtils.registerThemeChangeReceiver(mContext, mThemeChangeReceiver);
+    }
+
+    private Context getUiContext() {
+        if (mUiContext == null) {
+            mUiContext = ThemeUtils.createUiContext(mContext);
+        }
+        return mUiContext != null ? mUiContext : mContext;
     }
 
     public InputMonitor getInputMonitor() {
@@ -1804,6 +1827,18 @@ public class WindowManagerService extends IWindowManager.Stub
                 mLastWallpaperY = mWallpaperTarget.mWallpaperY;
                 mLastWallpaperYStep = mWallpaperTarget.mWallpaperYStep;
             }
+            if (mWallpaperTarget.mWallpaperXOverscrollMax >= 0) {
+                mLastWallpaperOverscrollXMax = mWallpaperTarget.mWallpaperXOverscrollMax;
+            }
+            if (mWallpaperTarget.mWallpaperYOverscrollMax >= 0) {
+                mLastWallpaperOverscrollYMax = mWallpaperTarget.mWallpaperYOverscrollMax;
+            }
+            if (mWallpaperTarget.mWallpaperXOverscroll >= 0) {
+                mlastWallpaperOverscrollX = mWallpaperTarget.mWallpaperXOverscroll;
+            }
+            if (mWallpaperTarget.mWallpaperYOverscroll >= 0) {
+                mlastWallpaperOverscrollY = mWallpaperTarget.mWallpaperYOverscroll;
+            }
         }
 
         // Start stepping backwards from here, ensuring that our wallpaper windows
@@ -1932,6 +1967,36 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 
+    public int getLastWallpaperX() {
+        int curTokenIndex = mWallpaperTokens.size();
+        while (curTokenIndex > 0) {
+            curTokenIndex--;
+            WindowToken token = mWallpaperTokens.get(curTokenIndex);
+            int curWallpaperIndex = token.windows.size();
+            while (curWallpaperIndex > 0) {
+                curWallpaperIndex--;
+                WindowState wallpaperWin = token.windows.get(curWallpaperIndex);
+                return wallpaperWin.mXOffset;
+            }
+        }
+        return -1;
+    }
+
+    public int getLastWallpaperY() {
+        int curTokenIndex = mWallpaperTokens.size();
+        while (curTokenIndex > 0) {
+            curTokenIndex--;
+            WindowToken token = mWallpaperTokens.get(curTokenIndex);
+            int curWallpaperIndex = token.windows.size();
+            while (curWallpaperIndex > 0) {
+                curWallpaperIndex--;
+                WindowState wallpaperWin = token.windows.get(curWallpaperIndex);
+                return wallpaperWin.mYOffset;
+            }
+        }
+        return -1;
+    }
+
     boolean updateWallpaperOffsetLocked(WindowState wallpaperWin, int dw, int dh,
             boolean sync) {
         boolean changed = false;
@@ -1940,15 +2005,28 @@ public class WindowManagerService extends IWindowManager.Stub
         float wpxs = mLastWallpaperXStep >= 0 ? mLastWallpaperXStep : -1.0f;
         int availw = wallpaperWin.mFrame.right-wallpaperWin.mFrame.left-dw;
         int offset = availw > 0 ? -(int)(availw*wpx+.5f) : 0;
-        changed = wallpaperWin.mXOffset != offset;
+
+        float wpxo = mlastWallpaperOverscrollX >= 0 ? mlastWallpaperOverscrollX : 0.5f;
+        int availwo = mLastWallpaperOverscrollXMax;
+        int overScrollOffset = availwo > 0 ? -(int)(availwo*wpxo+0.5f) : 0;
+
+        changed = wallpaperWin.mXOffset != offset ||
+                  wallpaperWin.mXOverscrollOffset != overScrollOffset;
         if (changed) {
             if (DEBUG_WALLPAPER) Slog.v(TAG, "Update wallpaper "
-                    + wallpaperWin + " x: " + offset);
-            wallpaperWin.mXOffset = offset;
+                    + wallpaperWin + " x: " + offset
+                    + "xOverscroll: " + overScrollOffset);
+            wallpaperWin.mXOffset = offset + overScrollOffset;
+            wallpaperWin.mXOverscrollOffset = overScrollOffset;
         }
-        if (wallpaperWin.mWallpaperX != wpx || wallpaperWin.mWallpaperXStep != wpxs) {
+        if (wallpaperWin.mWallpaperX != wpx ||
+            wallpaperWin.mWallpaperXStep != wpxs ||
+            wallpaperWin.mWallpaperXOverscrollMax != availwo ||
+            wallpaperWin.mWallpaperXOverscroll !=  wpxo) {
             wallpaperWin.mWallpaperX = wpx;
             wallpaperWin.mWallpaperXStep = wpxs;
+            wallpaperWin.mWallpaperXOverscrollMax = availwo;
+            wallpaperWin.mWallpaperXOverscroll =  wpxo;
             rawChanged = true;
         }
 
@@ -1956,15 +2034,28 @@ public class WindowManagerService extends IWindowManager.Stub
         float wpys = mLastWallpaperYStep >= 0 ? mLastWallpaperYStep : -1.0f;
         int availh = wallpaperWin.mFrame.bottom-wallpaperWin.mFrame.top-dh;
         offset = availh > 0 ? -(int)(availh*wpy+.5f) : 0;
-        if (wallpaperWin.mYOffset != offset) {
+
+        float wpyo = mlastWallpaperOverscrollY >= 0 ? mlastWallpaperOverscrollY : 0.5f;
+        int availho = mLastWallpaperOverscrollYMax;
+        overScrollOffset = availho > 0 ? -(int)(availho*wpyo+0.5f) : 0;
+
+        if (wallpaperWin.mYOffset != offset ||
+            wallpaperWin.mYOverscrollOffset != overScrollOffset) {
             if (DEBUG_WALLPAPER) Slog.v(TAG, "Update wallpaper "
-                    + wallpaperWin + " y: " + offset);
+                    + wallpaperWin + " y: " + offset
+                    + "yOverscroll: " + overScrollOffset);
             changed = true;
-            wallpaperWin.mYOffset = offset;
+            wallpaperWin.mYOffset = offset + overScrollOffset;
+            wallpaperWin.mYOverscrollOffset = overScrollOffset;
         }
-        if (wallpaperWin.mWallpaperY != wpy || wallpaperWin.mWallpaperYStep != wpys) {
+        if (wallpaperWin.mWallpaperY != wpy ||
+            wallpaperWin.mWallpaperYStep != wpys ||
+            wallpaperWin.mWallpaperYOverscrollMax != availho ||
+            wallpaperWin.mWallpaperYOverscroll !=  wpyo) {
             wallpaperWin.mWallpaperY = wpy;
             wallpaperWin.mWallpaperYStep = wpys;
+            wallpaperWin.mWallpaperYOverscrollMax = availho;
+            wallpaperWin.mWallpaperYOverscroll =  wpyo;
             rawChanged = true;
         }
 
@@ -1973,7 +2064,9 @@ public class WindowManagerService extends IWindowManager.Stub
             try {
                 if (DEBUG_WALLPAPER) Slog.v(TAG, "Report new wp offset "
                         + wallpaperWin + " x=" + wallpaperWin.mWallpaperX
-                        + " y=" + wallpaperWin.mWallpaperY);
+                        + " y=" + wallpaperWin.mWallpaperY
+                        + " xOverscroll=" + wallpaperWin.mWallpaperXOverscroll
+                        + " yOverscroll=" + wallpaperWin.mWallpaperYOverscroll);
                 if (sync) {
                     mWaitingOnWallpaper = wallpaperWin;
                 }
@@ -2036,6 +2129,16 @@ public class WindowManagerService extends IWindowManager.Stub
                 mLastWallpaperY = target.mWallpaperY;
             } else if (changingTarget.mWallpaperY >= 0) {
                 mLastWallpaperY = changingTarget.mWallpaperY;
+            }
+            if (target.mWallpaperXOverscroll >= 0) {
+                mlastWallpaperOverscrollX = target.mWallpaperXOverscroll;
+            } else if (changingTarget.mWallpaperXOverscroll >= 0) {
+                mlastWallpaperOverscrollX = changingTarget.mWallpaperXOverscroll;
+            }
+            if (target.mWallpaperYOverscroll >= 0) {
+                mlastWallpaperOverscrollY = target.mWallpaperYOverscroll;
+            } else if (changingTarget.mWallpaperYOverscroll >= 0) {
+                mlastWallpaperOverscrollY = changingTarget.mWallpaperYOverscroll;
             }
         }
 
@@ -2657,11 +2760,25 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public void setWindowWallpaperPositionLocked(WindowState window, float x, float y,
             float xStep, float yStep) {
-        if (window.mWallpaperX != x || window.mWallpaperY != y)  {
+        setWindowWallpaperPositionLocked(window, x, y, xStep, yStep, -1, -1, -1, -1);
+    }
+
+    public void setWindowWallpaperPositionLocked(WindowState window, float x, float y,
+            float xStep, float yStep, float xOverscroll, float yOverscroll,
+            int xOverscrollMax, int yOverscrollMax) {
+        if (window.mWallpaperX != x || window.mWallpaperY != y ||
+            window.mWallpaperXOverscroll != xOverscroll ||
+            window.mWallpaperYOverscroll != yOverscroll ||
+            window.mWallpaperXOverscrollMax != xOverscrollMax ||
+            window.mWallpaperYOverscrollMax != yOverscrollMax)  {
             window.mWallpaperX = x;
             window.mWallpaperY = y;
             window.mWallpaperXStep = xStep;
             window.mWallpaperYStep = yStep;
+            window.mWallpaperXOverscroll = xOverscroll;
+            window.mWallpaperYOverscroll = yOverscroll;
+            window.mWallpaperXOverscrollMax = xOverscrollMax;
+            window.mWallpaperYOverscrollMax = yOverscrollMax;
             updateWallpaperOffsetLocked(window, true);
         }
     }
@@ -3493,8 +3610,9 @@ public class WindowManagerService extends IWindowManager.Stub
             Task newTask = mTaskIdToTask.get(groupId);
             if (newTask == null) {
                 newTask = createTask(groupId, oldTask.mStack.mStackId, oldTask.mUserId, atoken);
+            } else {
+                newTask.mAppTokens.add(atoken);
             }
-            newTask.mAppTokens.add(atoken);
         }
     }
 
@@ -4321,6 +4439,10 @@ public class WindowManagerService extends IWindowManager.Stub
             // If we are preparing an app transition, then delay changing
             // the visibility of this token until we execute that transition.
             if (okToDisplay() && mAppTransition.isTransitionSet()) {
+                // Already in requested state, don't do anything more.
+                if (wtoken.hiddenRequested != visible) {
+                    return;
+                }
                 wtoken.hiddenRequested = !visible;
 
                 if (!wtoken.startingDisplayed) {
@@ -5052,6 +5174,15 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     @Override
+    public void showCustomIntentOnKeyguard(Intent intent) {
+        if (mContext.checkCallingOrSelfPermission(android.Manifest.permission.DEVICE_POWER)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mPolicy.showCustomIntentOnKeyguard(intent);
+    }
+
+    @Override
     public void dismissKeyguard() {
         if (mContext.checkCallingOrSelfPermission(android.Manifest.permission.DISABLE_KEYGUARD)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -5186,13 +5317,13 @@ public class WindowManagerService extends IWindowManager.Stub
     // Called by window manager policy.  Not exposed externally.
     @Override
     public void shutdown(boolean confirm) {
-        ShutdownThread.shutdown(mContext, confirm);
+        ShutdownThread.shutdown(getUiContext(), confirm);
     }
 
     // Called by window manager policy.  Not exposed externally.
     @Override
     public void rebootSafeMode(boolean confirm) {
-        ShutdownThread.rebootSafeMode(mContext, confirm);
+        ShutdownThread.rebootSafeMode(getUiContext(), confirm);
     }
 
     @Override
@@ -5206,6 +5337,13 @@ public class WindowManagerService extends IWindowManager.Stub
     @Override
     public void setTouchExplorationEnabled(boolean enabled) {
         mPolicy.setTouchExplorationEnabled(enabled);
+    }
+	
+
+    // Called by window manager policy. Not exposed externally.
+    @Override
+    public void reboot() {
+        ShutdownThread.reboot(mContext, null, true);
     }
 
     public void setCurrentUser(final int newUserId) {
@@ -9886,7 +10024,15 @@ public class WindowManagerService extends IWindowManager.Stub
 
             if (DEBUG_FOCUS_LIGHT) Slog.v(TAG, "findFocusedWindow: Found new focus @ " + i +
                         " = " + win);
-            return win;
+
+            // Dispatch to this window if it is wants key events.
+            if (win.canReceiveKeys()) {
+                if (mFocusedApp != null) {
+                    return win;
+                } else {
+                    return win;
+                }
+            }
         }
 
         if (DEBUG_FOCUS_LIGHT) Slog.v(TAG, "findFocusedWindow: No focusable windows.");
@@ -10877,5 +11023,119 @@ public class WindowManagerService extends IWindowManager.Stub
     @Override
     public Object getWindowManagerLock() {
         return mWindowMap;
+    }
+
+    private void moveTaskAndActivityToFront(int taskId) {
+        try {
+            moveTaskToTop(taskId);
+            mActivityManager.moveTaskToFront(taskId, 0, null);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Cannot move the activity to front", e);
+        }
+    }
+
+    public void notifyFloatActivityTouched(IBinder token, boolean force) {
+        synchronized(mWindowMap) {
+              boolean changed = false;
+              if (token != null) {
+                  AppWindowToken newFocus = findAppWindowToken(token);
+                  if (newFocus == null) {
+                      Slog.w(TAG, "Attempted to set focus to non-existing app token: " + token);
+                      return;
+                  }
+                  changed = mFocusedApp != newFocus;
+                  mFocusedApp = newFocus;
+                  if (changed || force) {
+                      if (DEBUG_FOCUS) Slog.v(TAG, "Changed app focus to " + token);
+                      mInputMonitor.setFocusedAppLw(newFocus);
+                  }
+              }
+
+              if (changed || force) {
+                  final long origId = Binder.clearCallingIdentity();
+                  updateFocusedWindowLocked(UPDATE_FOCUS_NORMAL, true);
+                  mH.removeMessages(H.REPORT_FOCUS_CHANGE);
+                  mH.sendEmptyMessage(H.REPORT_FOCUS_CHANGE);
+                  Binder.restoreCallingIdentity(origId);
+              }
+       }
+
+       if (!force) {
+           final long origId = Binder.clearCallingIdentity();
+           try {
+                int taskId = mActivityManager.getTaskForActivity(token, false);
+                moveTaskAndActivityToFront(taskId);
+           } catch (RemoteException e) {
+                Log.e(TAG, "Cannot move the activity to front", e);
+           }
+           Binder.restoreCallingIdentity(origId);
+       }
+    }
+
+    public Rect getAppFullscreenViewRect() {
+        final DisplayContent displayContent = getDefaultDisplayContentLocked();
+        final boolean rotated = (mRotation == Surface.ROTATION_90
+                || mRotation == Surface.ROTATION_270);
+        final int realdw = rotated ?
+                displayContent.mBaseDisplayHeight : displayContent.mBaseDisplayWidth;
+        final int realdh = rotated ?
+                displayContent.mBaseDisplayWidth : displayContent.mBaseDisplayHeight;
+        final boolean nativeLandscape =
+                (displayContent.mBaseDisplayHeight < displayContent.mBaseDisplayWidth);
+
+        int dw = realdw;
+        int dh = realdh;
+
+        // Get application display metrics.
+        int appWidth = mPolicy.getNonDecorDisplayWidth(dw, dh, mRotation);
+        int appHeight = mPolicy.getNonDecorDisplayHeight(dw, dh, mRotation);
+
+        return new Rect(0, 0, appWidth, appHeight);
+    }
+
+    public Rect getAppMinimumViewRect() {
+        final DisplayContent displayContent = getDefaultDisplayContentLocked();
+        final boolean rotated = (mRotation == Surface.ROTATION_90
+                || mRotation == Surface.ROTATION_270);
+        final int realdw = rotated ?
+                displayContent.mBaseDisplayHeight : displayContent.mBaseDisplayWidth;
+        final int realdh = rotated ?
+                displayContent.mBaseDisplayWidth : displayContent.mBaseDisplayHeight;
+        final boolean nativeLandscape =
+                (displayContent.mBaseDisplayHeight < displayContent.mBaseDisplayWidth);
+
+        int dw = realdw;
+        int dh = realdh;
+
+        // Get application display metrics.
+        int appWidth = mPolicy.getNonDecorDisplayWidth(dw, dh, mRotation);
+        int appHeight = mPolicy.getNonDecorDisplayHeight(dw, dh, mRotation);
+
+        return new Rect(0, 0, (int)(appWidth * 0.5f) , (int)(appHeight * 0.5f));
+    }
+
+    public Rect getFloatViewRect() {
+        final DisplayContent displayContent = getDefaultDisplayContentLocked();
+        final boolean rotated = (mRotation == Surface.ROTATION_90
+                || mRotation == Surface.ROTATION_270);
+        final int realdw = rotated ?
+                displayContent.mBaseDisplayHeight : displayContent.mBaseDisplayWidth;
+        final int realdh = rotated ?
+                displayContent.mBaseDisplayWidth : displayContent.mBaseDisplayHeight;
+        final boolean nativeLandscape =
+                (displayContent.mBaseDisplayHeight < displayContent.mBaseDisplayWidth);
+
+        int dw = realdw;
+        int dh = realdh;
+
+        // Get application display metrics.
+        int appWidth = mPolicy.getNonDecorDisplayWidth(dw, dh, mRotation);
+        int appHeight = mPolicy.getNonDecorDisplayHeight(dw, dh, mRotation);
+
+        if (nativeLandscape ^ rotated) {
+            return new Rect(0, 0, (int)(appWidth * 0.7f), (int)(appHeight * 0.9f));
+        } else {
+            return new Rect(0, 0, (int)(appWidth * 0.9f) , (int)(appHeight * 0.7f));
+        }
     }
 }

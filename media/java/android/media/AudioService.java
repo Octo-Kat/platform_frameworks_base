@@ -42,6 +42,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.ThemeUtils;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
@@ -133,6 +134,8 @@ public class AudioService extends IAudioService.Stub {
 
     /** The UI */
     private VolumePanel mVolumePanel;
+    private Context mUiContext;
+    private Handler mHandler;
 
     // sendMsg() flags
     /** If the msg is already queued, replace it with this one. */
@@ -434,14 +437,17 @@ public class AudioService extends IAudioService.Stub {
     // Devices for which the volume is fixed and VolumePanel slider should be disabled
     final int mFixedVolumeDevices = AudioSystem.DEVICE_OUT_AUX_DIGITAL |
             AudioSystem.DEVICE_OUT_DGTL_DOCK_HEADSET |
-            AudioSystem.DEVICE_OUT_ANLG_DOCK_HEADSET |
-            AudioSystem.DEVICE_OUT_ALL_USB;
+            AudioSystem.DEVICE_OUT_ALL_USB |
+            AudioSystem.DEVICE_OUT_PROXY; // use fixed volume on proxy device(WiFi display)
 
     // TODO merge orientation and rotation
     private final boolean mMonitorOrientation;
     private final boolean mMonitorRotation;
 
     private boolean mDockAudioMediaEnabled = true;
+
+    private boolean mForceAnalogDeskDock;
+    private boolean mForceAnalogCarDock;
 
     private int mDockState = Intent.EXTRA_DOCK_STATE_UNDOCKED;
 
@@ -469,6 +475,7 @@ public class AudioService extends IAudioService.Stub {
         mContext = context;
         mContentResolver = context.getContentResolver();
         mAppOps = (AppOpsManager)context.getSystemService(Context.APP_OPS_SERVICE);
+        mHandler = new Handler();
         mVoiceCapable = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_voice_capable);
 
@@ -486,7 +493,6 @@ public class AudioService extends IAudioService.Stub {
         sSoundEffectVolumeDb = context.getResources().getInteger(
                 com.android.internal.R.integer.config_soundEffectVolumeDb);
 
-        mVolumePanel = new VolumePanel(context, this);
         mForcedUseForComm = AudioSystem.FORCE_NONE;
 
         createAudioSystemThread();
@@ -543,7 +549,9 @@ public class AudioService extends IAudioService.Stub {
         intentFilter.addAction(Intent.ACTION_BOOT_COMPLETED);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+        intentFilter.addAction(Intent.ACTION_USER_BACKGROUND);
         intentFilter.addAction(Intent.ACTION_USER_SWITCHED);
+        intentFilter.addAction(Intent.ACTION_HEADSET_PLUG);
 
         intentFilter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         // TODO merge orientation and rotation
@@ -563,6 +571,13 @@ public class AudioService extends IAudioService.Stub {
         }
 
         context.registerReceiver(mReceiver, intentFilter);
+        
+        ThemeUtils.registerThemeChangeReceiver(context, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mUiContext = null;
+            }
+        });
 
         mUseMasterVolume = context.getResources().getBoolean(
                 com.android.internal.R.bool.config_useMasterVolume);
@@ -570,6 +585,12 @@ public class AudioService extends IAudioService.Stub {
 
         mMasterVolumeRamp = context.getResources().getIntArray(
                 com.android.internal.R.array.config_masterVolumeRamp);
+
+        mForceAnalogDeskDock = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_forceAnalogDeskDock);
+
+        mForceAnalogCarDock = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_forceAnalogCarDock);
 
     }
 
@@ -1168,7 +1189,7 @@ public class AudioService extends IAudioService.Stub {
             streamType = AudioSystem.STREAM_NOTIFICATION;
         }
 
-        mVolumePanel.postVolumeChanged(streamType, flags);
+        showVolumeChangeUi(streamType, flags);
 
         if ((flags & AudioManager.FLAG_FIXED_VOLUME) == 0) {
             oldIndex = (oldIndex + 5) / 10;
@@ -2145,6 +2166,19 @@ public class AudioService extends IAudioService.Stub {
                                 mScoAudioMode =
                                         (targetSdkVersion < Build.VERSION_CODES.JELLY_BEAN_MR2) ?
                                                 SCO_MODE_VIRTUAL_CALL : SCO_MODE_RAW;
+                                /*
+                                 * Raw mode causes some issues on HFP head units,
+                                 * apparently when doing PBAP, so disregard it on
+                                 * those for now and keep using VIRTUAL_CALL
+                                 */
+                                if (mBluetoothHeadsetDevice != null) {
+                                    BluetoothClass btClass = mBluetoothHeadsetDevice.getBluetoothClass();
+                                    if (btClass.getDeviceClass() ==
+                                        BluetoothClass.Device.AUDIO_VIDEO_HANDSFREE  &&
+                                        btClass.hasService(BluetoothClass.Service.OBJECT_TRANSFER)) {
+                                            mScoAudioMode = SCO_MODE_VIRTUAL_CALL;
+                                    }
+                                }
                                 if (mBluetoothHeadset != null && mBluetoothHeadsetDevice != null) {
                                     boolean status;
                                     if (mScoAudioMode == SCO_MODE_RAW) {
@@ -2504,11 +2538,15 @@ public class AudioService extends IAudioService.Stub {
                     //   (step <= oldIndex < 2 * step) is equivalent to: (old UI index == 1)
                     if (step <= oldIndex && oldIndex < 2 * step) {
                         ringerMode = RINGER_MODE_VIBRATE;
+                        if (mVoiceCapable)
+                            adjustVolumeIndex = false;
                     }
                 } else {
                     // (oldIndex < step) is equivalent to (old UI index == 0)
                     if ((oldIndex < step) && mPrevVolDirection != AudioManager.ADJUST_LOWER) {
                         ringerMode = RINGER_MODE_SILENT;
+                        if (mVoiceCapable)
+                            adjustVolumeIndex = false;
                     }
                 }
             }
@@ -2568,9 +2606,8 @@ public class AudioService extends IAudioService.Stub {
                  (1 << AudioSystem.STREAM_SYSTEM)|(1 << AudioSystem.STREAM_SYSTEM_ENFORCED)),
                  UserHandle.USER_CURRENT);
 
-        // ringtone, notification and system streams are always affected by ringer mode
+        // ringtone and system streams are always affected by ringer mode
         ringerModeAffectedStreams |= (1 << AudioSystem.STREAM_RING)|
-                                        (1 << AudioSystem.STREAM_NOTIFICATION)|
                                         (1 << AudioSystem.STREAM_SYSTEM);
 
         if (mVoiceCapable) {
@@ -4027,10 +4064,10 @@ public class AudioService extends IAudioService.Stub {
                 int config;
                 switch (dockState) {
                     case Intent.EXTRA_DOCK_STATE_DESK:
-                        config = AudioSystem.FORCE_BT_DESK_DOCK;
+                        config = mForceAnalogDeskDock ? AudioSystem.FORCE_ANALOG_DOCK : AudioSystem.FORCE_BT_DESK_DOCK;
                         break;
                     case Intent.EXTRA_DOCK_STATE_CAR:
-                        config = AudioSystem.FORCE_BT_CAR_DOCK;
+                        config = mForceAnalogCarDock ? AudioSystem.FORCE_ANALOG_DOCK : AudioSystem.FORCE_BT_CAR_DOCK;
                         break;
                     case Intent.EXTRA_DOCK_STATE_LE_DESK:
                         config = AudioSystem.FORCE_ANALOG_DOCK;
@@ -4089,6 +4126,16 @@ public class AudioService extends IAudioService.Stub {
                             resetBluetoothSco();
                         }
                     }
+                }
+            } else if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
+                state = intent.getIntExtra("state", 0);
+                if (state == 1) {
+                    // Headset plugged in
+                    adjustCurrentStreamVolume();
+                    // TODO: Cap volume at safe levels
+                } else {
+                    // Headset disconnected
+                    adjustCurrentStreamVolume();
                 }
             } else if (action.equals(Intent.ACTION_USB_AUDIO_ACCESSORY_PLUG) ||
                            action.equals(Intent.ACTION_USB_AUDIO_DEVICE_PLUG)) {
@@ -4180,13 +4227,14 @@ public class AudioService extends IAudioService.Stub {
                         0,
                         null,
                         SAFE_VOLUME_CONFIGURE_TIMEOUT_MS);
+                adjustCurrentStreamVolume();
             } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
                 AudioSystem.setParameters("screen_state=on");
             } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
                 AudioSystem.setParameters("screen_state=off");
             } else if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
                 handleConfigurationChanged(context);
-            } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
+            } else if (action.equals(Intent.ACTION_USER_BACKGROUND)) {
                 // attempt to stop music playback for background user
                 sendMsg(mAudioHandler,
                         MSG_BROADCAST_AUDIO_BECOMING_NOISY,
@@ -4195,6 +4243,7 @@ public class AudioService extends IAudioService.Stub {
                         0,
                         null,
                         0);
+            } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
                 // the current audio focus owner is no longer valid
                 mMediaFocusControl.discardAudioFocusOwner();
 
@@ -4208,6 +4257,39 @@ public class AudioService extends IAudioService.Stub {
                         0,
                         mStreamStates[AudioSystem.STREAM_MUSIC], 0);
             }
+        }
+
+        private void adjustCurrentStreamVolume() {
+            VolumeStreamState streamState;
+            int device;
+
+            for (int stream = 0; stream < AudioSystem.getNumStreamTypes(); stream++) {
+                if (stream == mStreamVolumeAlias[stream]) {
+                    streamState = mStreamStates[mStreamVolumeAlias[stream]];
+                    device = getDeviceForStream(stream);
+                    // apply stored value for device
+                    streamState.applyDeviceVolume(device);
+                }
+            }
+        }
+    }
+    
+    private void showVolumeChangeUi(final int streamType, final int flags) {
+        if (mUiContext != null && mVolumePanel != null) {
+            mVolumePanel.postVolumeChanged(streamType, flags);
+        } else {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (mUiContext == null) {
+                        mUiContext = ThemeUtils.createUiContext(mContext);
+                    }
+
+                    final Context context = mUiContext != null ? mUiContext : mContext;
+                    mVolumePanel = new VolumePanel(context, AudioService.this);
+                    mVolumePanel.postVolumeChanged(streamType, flags);
+                }
+            });
         }
     }
 

@@ -125,6 +125,7 @@ public class KeyguardViewMediator {
     private static final int DISPATCH_EVENT = 15;
     private static final int LAUNCH_CAMERA = 16;
     private static final int DISMISS = 17;
+    private static final int START_CUSTOM_INTENT = 18;
 
     /**
      * The default amount of time we stay awake (used for all key input)
@@ -607,7 +608,8 @@ public class KeyguardViewMediator {
                 }
             } else if (mShowing) {
                 notifyScreenOffLocked();
-                resetStateLocked(null);
+                // It doesn't make sense to me to reset the lockscreen when screen is turned off on lockscreen
+                // resetStateLocked(null);
             } else if (why == WindowManagerPolicy.OFF_BECAUSE_OF_TIMEOUT
                    || (why == WindowManagerPolicy.OFF_BECAUSE_OF_USER && !lockImmediately)) {
                 doKeyguardLaterLocked();
@@ -1097,6 +1099,9 @@ public class KeyguardViewMediator {
                 case SHOW_ASSISTANT:
                     handleShowAssistant();
                     break;
+                case START_CUSTOM_INTENT:
+                    handleShowCustomIntent((Intent) msg.obj);
+                    break;
                 case DISPATCH_EVENT:
                     handleDispatchEvent((MotionEvent) msg.obj);
                     break;
@@ -1365,6 +1370,15 @@ public class KeyguardViewMediator {
 
     public void handleShowAssistant() {
         mKeyguardViewManager.showAssistant();
+    }
+
+    public void showCustomIntent(Intent intent) {
+        Message msg = mHandler.obtainMessage(START_CUSTOM_INTENT, intent);
+        mHandler.sendMessage(msg);
+    }
+
+    public void handleShowCustomIntent(Intent intent) {
+        mKeyguardViewManager.showCustomIntent(intent);
     }
 
     private boolean isAssistantAvailable() {

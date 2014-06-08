@@ -1,4 +1,5 @@
 // Copyright 2012 Google Inc. All Rights Reserved.
+// This code has been modified. Portions copyright (C) 2013, ParanoidAndroid Project.
 
 package com.android.server.wm;
 
@@ -14,6 +15,7 @@ import static com.android.server.wm.WindowManagerService.LayoutFields.SET_WALLPA
 import android.content.Context;
 import android.os.Debug;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.Slog;
 import android.util.SparseArray;
@@ -119,6 +121,12 @@ public class WindowAnimator {
         }
 
         mDisplayContentsAnimators.delete(displayId);
+    }
+
+    AppWindowAnimator getWallpaperAppAnimator() {
+        return mService.mWallpaperTarget == null
+                ? null : mService.mWallpaperTarget.mAppToken == null
+                        ? null : mService.mWallpaperTarget.mAppToken.mAppAnimator;
     }
 
     void hideWallpapersLocked(final WindowState w) {

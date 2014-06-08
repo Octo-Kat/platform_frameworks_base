@@ -251,7 +251,7 @@ void InputDispatcher::dispatchOnceInnerLocked(nsecs_t* nextWakeupTime) {
     // Reset the key repeat timer whenever we disallow key events, even if the next event
     // is not a key.  This is to ensure that we abort a key repeat if the device is just coming
     // out of sleep.
-    if (!mPolicy->isKeyRepeatEnabled()) {
+    if (!mPolicy->isKeyRepeatEnabled() || !mDispatchEnabled) {
         resetKeyRepeatLocked();
     }
 
@@ -506,7 +506,7 @@ void InputDispatcher::dropInboundEventLocked(EventEntry* entry, DropReason dropR
         reason = "inbound event was dropped because the policy consumed it";
         break;
     case DROP_REASON_DISABLED:
-        ALOGI("Dropped event because input dispatch is disabled.");
+        //ALOGI("Dropped event because input dispatch is disabled.");
         reason = "inbound event was dropped because input dispatch is disabled";
         break;
     case DROP_REASON_APP_SWITCH:

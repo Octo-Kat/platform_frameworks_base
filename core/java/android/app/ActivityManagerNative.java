@@ -42,6 +42,7 @@ import android.os.Parcelable;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.StrictMode;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Singleton;
@@ -680,6 +681,16 @@ public abstract class ActivityManagerNative extends Binder implements IActivityM
                 ? getTaskForActivity(token, onlyRoot) : -1;
                 reply.writeNoException();
             reply.writeInt(res);
+            return true;
+        }
+
+        case GET_ACTIVITY_FOR_TASK_TRANSACTION: {
+            data.enforceInterface(IActivityManager.descriptor);
+            int task = data.readInt();
+            boolean onlyRoot = data.readInt() != 0;
+            IBinder res = getActivityForTask(task, onlyRoot);
+            reply.writeNoException();
+            reply.writeStrongBinder(res);
             return true;
         }
 
@@ -2070,6 +2081,13 @@ class ActivityManagerProxy implements IActivityManager
             ParcelFileDescriptor profileFd, Bundle options) throws RemoteException {
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
+
+        if (intent.getComponent() != null) {
+            Log.i("ActivityManager", "Timeline: Activity_launch_request id:"
+                    + intent.getComponent().getPackageName() + " time:"
+                    + SystemClock.uptimeMillis());
+        }
+
         data.writeInterfaceToken(IActivityManager.descriptor);
         data.writeStrongBinder(caller != null ? caller.asBinder() : null);
         data.writeString(callingPackage);
@@ -2419,6 +2437,8 @@ class ActivityManagerProxy implements IActivityManager
     public void activityIdle(IBinder token, Configuration config, boolean stopProfiling)
             throws RemoteException
     {
+        Log.i("ActivityManager", "Timeline: Activity_idle id: " + token + " time:"
+                + SystemClock.uptimeMillis());
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         data.writeInterfaceToken(IActivityManager.descriptor);
@@ -2812,6 +2832,20 @@ class ActivityManagerProxy implements IActivityManager
         mRemote.transact(GET_TASK_FOR_ACTIVITY_TRANSACTION, data, reply, 0);
         reply.readException();
         int res = reply.readInt();
+        data.recycle();
+        reply.recycle();
+        return res;
+    }
+    public IBinder getActivityForTask(int task, boolean onlyRoot) throws RemoteException
+    {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        data.writeInterfaceToken(IActivityManager.descriptor);
+        data.writeInt(task);
+        data.writeInt(onlyRoot ? 1 : 0);
+        mRemote.transact(GET_ACTIVITY_FOR_TASK_TRANSACTION, data, reply, 0);
+        reply.readException();
+        IBinder res = reply.readStrongBinder();
         data.recycle();
         reply.recycle();
         return res;

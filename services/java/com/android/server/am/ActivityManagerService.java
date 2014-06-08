@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006-2008 The Android Open Source Project
+ * This code has been modified.  Portions copyright (C) 2010, T-Mobile USA, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +30,7 @@ import static com.android.server.am.ActivityStackSupervisor.HOME_STACK_ID;
 
 import android.app.AppOpsManager;
 import android.appwidget.AppWidgetManager;
+import android.content.pm.ThemeUtils;
 import android.util.ArrayMap;
 import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
@@ -124,7 +126,9 @@ import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
+import android.content.res.CustomTheme;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.net.Proxy;
 import android.net.ProxyProperties;
 import android.net.Uri;
@@ -199,6 +203,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import dalvik.system.Zygote;
 
 public final class ActivityManagerService extends ActivityManagerNative
         implements Watchdog.Monitor, BatteryStatsImpl.BatteryCallback {
@@ -325,6 +330,8 @@ public final class ActivityManagerService extends ActivityManagerNative
 
     // How many bytes to write into the dropbox log before truncating
     static final int DROPBOX_MAX_SIZE = 256 * 1024;
+
+    static final String PROP_REFRESH_THEME = "sys.refresh_theme";
 
     /** Run all ActivityStacks through this */
     ActivityStackSupervisor mStackSupervisor;
@@ -810,6 +817,7 @@ public final class ActivityManagerService extends ActivityManagerNative
     boolean mLaunchWarningShown = false;
 
     Context mContext;
+    Context mUiContext;
 
     int mFactoryTest;
 
@@ -1059,6 +1067,9 @@ public final class ActivityManagerService extends ActivityManagerNative
     static final int PERSIST_URI_GRANTS_MSG = 38;
     static final int REQUEST_ALL_PSS_MSG = 39;
 
+    static final int POST_PRIVACY_NOTIFICATION_MSG = 40;
+    static final int CANCEL_PRIVACY_NOTIFICATION_MSG = 41;
+
     static final int FIRST_ACTIVITY_STACK_MSG = 100;
     static final int FIRST_BROADCAST_QUEUE_MSG = 200;
     static final int FIRST_COMPAT_MODE_MSG = 300;
@@ -1106,7 +1117,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                         return;
                     }
                     if (mShowDialogs && !mSleeping && !mShuttingDown) {
-                        Dialog d = new AppErrorDialog(mContext,
+                        Dialog d = new AppErrorDialog(getUiContext(),
                                 ActivityManagerService.this, res, proc);
                         d.show();
                         proc.crashDialog = d;
@@ -1141,7 +1152,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
                     if (mShowDialogs) {
                         Dialog d = new AppNotRespondingDialog(ActivityManagerService.this,
-                                mContext, proc, (ActivityRecord)data.get("activity"),
+                                getUiContext(), proc, (ActivityRecord)data.get("activity"),
                                 msg.arg1 != 0);
                         d.show();
                         proc.anrDialog = d;
@@ -1167,7 +1178,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                     }
                     AppErrorResult res = (AppErrorResult) data.get("result");
                     if (mShowDialogs && !mSleeping && !mShuttingDown) {
-                        Dialog d = new StrictModeViolationDialog(mContext,
+                        Dialog d = new StrictModeViolationDialog(getUiContext(),
                                 ActivityManagerService.this, res, proc);
                         d.show();
                         proc.crashDialog = d;
@@ -1181,7 +1192,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             } break;
             case SHOW_FACTORY_ERROR_MSG: {
                 Dialog d = new FactoryErrorDialog(
-                    mContext, msg.getData().getCharSequence("msg"));
+                    getUiContext(), msg.getData().getCharSequence("msg"));
                 d.show();
                 ensureBootCompleted();
             } break;
@@ -1201,7 +1212,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                         if (!app.waitedForDebugger) {
                             Dialog d = new AppWaitingForDebuggerDialog(
                                     ActivityManagerService.this,
-                                    mContext, app);
+                                    getUiContext(), app);
                             app.waitDialog = d;
                             app.waitedForDebugger = true;
                             d.show();
@@ -1222,7 +1233,11 @@ public final class ActivityManagerService extends ActivityManagerNative
                     mHandler.sendMessageDelayed(nmsg, ActiveServices.SERVICE_TIMEOUT);
                     return;
                 }
-                mServices.serviceTimeout((ProcessRecord)msg.obj);
+                //synchronising to avoid proc.executingServices set
+                //getting updated while being iterated in serviceTimeout()
+                synchronized(ActivityManagerService.this){
+                    mServices.serviceTimeout((ProcessRecord)msg.obj);
+                }
             } break;
             case UPDATE_TIME_ZONE: {
                 synchronized (ActivityManagerService.this) {
@@ -1285,7 +1300,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 Log.e(TAG, title + ": " + text);
                 if (mShowDialogs) {
                     // XXX This is a temporary dialog, no need to localize.
-                    AlertDialog d = new BaseErrorDialog(mContext);
+                    AlertDialog d = new BaseErrorDialog(getUiContext());
                     d.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ERROR);
                     d.setCancelable(false);
                     d.setTitle(title);
@@ -1358,7 +1373,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                     notification.defaults = 0; // please be quiet
                     notification.sound = null;
                     notification.vibrate = null;
-                    notification.setLatestEventInfo(context, text,
+                    notification.setLatestEventInfo(getUiContext(), text,
                             mContext.getText(R.string.heavy_weight_notification_detail),
                             PendingIntent.getActivityAsUser(mContext, 0, root.intent,
                                     PendingIntent.FLAG_CANCEL_CURRENT, null,
@@ -1668,6 +1683,69 @@ public final class ActivityManagerService extends ActivityManagerNative
                 requestPssAllProcsLocked(SystemClock.uptimeMillis(), true, false);
                 break;
             }
+            case POST_PRIVACY_NOTIFICATION_MSG: {
+                INotificationManager inm = NotificationManager.getService();
+                if (inm == null) {
+                    return;
+                }
+
+                ActivityRecord root = (ActivityRecord)msg.obj;
+                ProcessRecord process = root.app;
+                if (process == null) {
+                    return;
+                }
+
+                try {
+                    Context context = mContext.createPackageContext(process.info.packageName, 0);
+                    String text = mContext.getString(R.string.privacy_guard_notification_detail,
+                            context.getApplicationInfo().loadLabel(context.getPackageManager()));
+                    String title = mContext.getString(R.string.privacy_guard_notification);
+
+                    Intent infoIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", root.packageName, null));
+
+                    Notification notification = new Notification();
+                    notification.icon = com.android.internal.R.drawable.stat_notify_privacy_guard;
+                    notification.when = 0;
+                    notification.flags = Notification.FLAG_ONGOING_EVENT;
+                    notification.priority = Notification.PRIORITY_LOW;
+                    notification.defaults = 0;
+                    notification.sound = null;
+                    notification.vibrate = null;
+                    notification.setLatestEventInfo(getUiContext(),
+                            title, text,
+                            PendingIntent.getActivityAsUser(mContext, 0, infoIntent,
+                                    PendingIntent.FLAG_CANCEL_CURRENT, null,
+                                    new UserHandle(root.userId)));
+
+                    try {
+                        int[] outId = new int[1];
+                        inm.enqueueNotificationWithTag("android", "android", null,
+                                R.string.privacy_guard_notification,
+                                notification, outId, root.userId);
+                    } catch (RuntimeException e) {
+                        Slog.w(ActivityManagerService.TAG,
+                                "Error showing notification for privacy guard", e);
+                    } catch (RemoteException e) {
+                    }
+                } catch (NameNotFoundException e) {
+                    Slog.w(TAG, "Unable to create context for privacy guard notification", e);
+                }
+            } break;
+            case CANCEL_PRIVACY_NOTIFICATION_MSG: {
+                INotificationManager inm = NotificationManager.getService();
+                if (inm == null) {
+                    return;
+                }
+                try {
+                    inm.cancelNotificationWithTag("android", null,
+                            R.string.privacy_guard_notification,  msg.arg1);
+                } catch (RuntimeException e) {
+                    Slog.w(ActivityManagerService.TAG,
+                            "Error canceling notification for service", e);
+                } catch (RemoteException e) {
+                }
+            } break;
             }
         }
     };
@@ -2202,6 +2280,15 @@ public final class ActivityManagerService extends ActivityManagerNative
             synchronized(mPidsSelfLocked) {
                 mOnBattery = DEBUG_POWER ? true : onBattery;
             }
+        }
+    }
+    
+    private Context getUiContext() {
+        synchronized (this) {
+            if (mUiContext == null && mBooted) {
+                mUiContext = ThemeUtils.createUiContext(mContext);
+            }
+            return mUiContext != null ? mUiContext : mContext;
         }
     }
 
@@ -2764,11 +2851,18 @@ public final class ActivityManagerService extends ActivityManagerNative
                 debugFlags |= Zygote.DEBUG_ENABLE_ASSERT;
             }
 
+            //Check if zygote should refresh its fonts
+            boolean refreshTheme = false;
+            if (SystemProperties.getBoolean(PROP_REFRESH_THEME, false)) {
+                SystemProperties.set(PROP_REFRESH_THEME, "false");
+                refreshTheme = true;
+            }
+
             // Start the process.  It will either succeed and return a result containing
             // the PID of the new process, or else throw a RuntimeException.
             Process.ProcessStartResult startResult = Process.start("android.app.ActivityThread",
                     app.processName, uid, uid, gids, debugFlags, mountExternal,
-                    app.info.targetSdkVersion, app.info.seinfo, null);
+                    app.info.targetSdkVersion, app.info.seinfo, refreshTheme, null);
 
             BatteryStatsImpl bs = mBatteryStatsService.getActiveStatistics();
             synchronized (bs) {
@@ -4124,7 +4218,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 @Override
                 public void run() {
                     synchronized (ActivityManagerService.this) {
-                        final Dialog d = new LaunchWarningWindow(mContext, cur, next);
+                        final Dialog d = new LaunchWarningWindow(getUiContext(), cur, next);
                         d.show();
                         mHandler.postDelayed(new Runnable() {
                             @Override
@@ -5142,6 +5236,13 @@ public final class ActivityManagerService extends ActivityManagerNative
                 }
             }
         }, pkgFilter);
+        
+        ThemeUtils.registerThemeChangeReceiver(mContext, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mUiContext = null;
+            }
+        });
 
         synchronized (this) {
             // Ensure that any processes we had put on hold are now started
@@ -6858,7 +6959,11 @@ public final class ActivityManagerService extends ActivityManagerNative
                     }
                     
                     res.add(rti);
-                    maxNum--;
+                    if ((tr.intent.getFlags() & Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS) == 0
+                            || (flags & ActivityManager.RECENT_DO_NOT_COUNT_EXCLUDED) == 0
+                            || i == 0) {
+                        maxNum--;
+                    }
                 }
             }
             return res;
@@ -7252,6 +7357,24 @@ public final class ActivityManagerService extends ActivityManagerNative
             return ActivityRecord.getTaskForActivityLocked(token, onlyRoot);
         }
     }
+
+    public IBinder getActivityForTask(int task, boolean onlyRoot) {
+        final ActivityStack mainStack = mStackSupervisor.getFocusedStack();
+        synchronized(this) {
+            ArrayList<ActivityStack> stacks = mStackSupervisor.getStacks();
+            for (ActivityStack stack : stacks) {
+                TaskRecord r = stack.taskForIdLocked(task);
+
+                if (r != null && r.getTopActivity() != null) {
+                    return r.getTopActivity().appToken;
+                } else {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
 
     // =========================================================
     // THUMBNAILS
@@ -12423,6 +12546,7 @@ public final class ActivityManagerService extends ActivityManagerNative
         app.foregroundActivities = false;
         app.hasShownUi = false;
         app.hasAboveClient = false;
+        app.hasClientActivities = false;
 
         mServices.killServicesLocked(app, allowRestart);
 
@@ -13997,6 +14121,9 @@ public final class ActivityManagerService extends ActivityManagerNative
         Configuration ci;
         synchronized(this) {
             ci = new Configuration(mConfiguration);
+            if (ci.customTheme == null) {
+                ci.customTheme = CustomTheme.getBootTheme(mContext.getContentResolver());
+            }
         }
         return ci;
     }
@@ -14069,6 +14196,11 @@ public final class ActivityManagerService extends ActivityManagerNative
                     saveLocaleLocked(values.locale, 
                                      !values.locale.equals(mConfiguration.locale),
                                      values.userSetLocale);
+                }
+                
+                if (values.customTheme != null) {
+                    saveThemeResourceLocked(values.customTheme,
+                            !values.customTheme.equals(mConfiguration.customTheme));
                 }
 
                 mConfigurationSeq++;
@@ -14218,6 +14350,15 @@ public final class ActivityManagerService extends ActivityManagerNative
             return null;
         }
         return srec.launchedFromPackage;
+    }
+    
+    private void saveThemeResourceLocked(CustomTheme t, boolean isDiff){
+        if(isDiff) {
+            Settings.Secure.putString(mContext.getContentResolver(), Configuration.THEME_PACKAGE_NAME_PERSISTENCE_PROPERTY, t.getThemePackageName());
+            Settings.Secure.putString(mContext.getContentResolver(), Configuration.THEME_SYSTEMUI_PACKAGE_NAME_PERSISTENCE_PROPERTY, t.getSystemUiPackageName());
+            Settings.Secure.putString(mContext.getContentResolver(), Configuration.THEME_ICONPACK_PACKAGE_NAME_PERSISTENCE_PROPERTY, t.getIconPackPkgName());
+            Settings.Secure.putString(mContext.getContentResolver(), Configuration.THEME_FONT_PACKAGE_NAME_PERSISTENCE_PROPERTY, t.getFontPackPkgName());
+        }
     }
 
     // =========================================================

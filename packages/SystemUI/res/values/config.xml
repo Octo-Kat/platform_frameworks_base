@@ -80,6 +80,7 @@
 
     <!-- The number of columns in the QuickSettings -->
     <integer name="quick_settings_num_columns">3</integer>
+    <integer name="quick_settings_num_columns_small">5</integer>
 
     <!-- The number of columns that the top level tiles span in the QuickSettings -->
     <integer name="quick_settings_user_time_settings_tile_span">1</integer>
@@ -110,5 +111,13 @@
 
     <!-- milliseconds before the heads up notification accepts touches. -->
     <integer name="heads_up_sensitivity_delay">700</integer>
+
+    <!-- Device supports LED flashlight -->
+    <bool name="config_enableTorch">false</bool>
+
+    <!-- Sensivity of pie gestures controlls.
+        Must be minimum 1 and maximum 10 (See @EdgeServiceConstants.java).
+        Default for pie is high sensivity -->
+    <integer name="pie_gesture_sensivity">8</integer>
 </resources>
 
