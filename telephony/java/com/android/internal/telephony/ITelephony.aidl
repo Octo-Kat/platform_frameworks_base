@@ -376,5 +376,7 @@ interface ITelephony {
        * Unregister a callback.
        */
       void removeListener(ITelephonyListener listener);
+
+      int getLteOnGsmMode();
 }
 
