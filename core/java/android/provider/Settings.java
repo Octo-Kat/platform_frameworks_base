@@ -2733,6 +2733,16 @@ public final class Settings {
          */
         @Deprecated
         public static final String DOCK_SOUNDS_ENABLED = Global.DOCK_SOUNDS_ENABLED;
+        
+        /**
+         * Displays a notification when wifi network has changed
+         * 0 - default (off)
+         * 1 - toast
+         * 2 - notification
+         * 3 - notification with sound
+         * @hide
+         */
+        public static final String WIFI_NETWORK_NOTIFICATIONS = "wifi_network_notifications";
 
         /**
          * Whether to play sounds when the keyguard is shown and dismissed.
@@ -3201,6 +3211,12 @@ public final class Settings {
          * @hide
          */
         public static final String SHOW_LTE_OR_FOURGEE = "show_lte_or_fourgee";
+
+    	/**
+    	* Configurable Data on wifi - up to per user defined
+    	* @hide
+    	*/
+    	public static final String HIDE_DATA_ON_WIFI = "hide_data_on_wifi";
 
         /**
         * Notification Power Widget - Custom Brightness Mode
@@ -9594,4 +9610,5 @@ public final class Settings {
     public static String getGTalkDeviceId(long androidId) {
         return "android-" + Long.toHexString(androidId);
     }
+
 }
