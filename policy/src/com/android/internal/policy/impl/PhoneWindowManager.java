@@ -853,7 +853,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             // Do the switch
             final AudioManager am = (AudioManager)mContext.getSystemService(Context.AUDIO_SERVICE);
             final int ringerMode = am.getRingerMode();
-            final VolumePanel volumePanel = new VolumePanel(ThemeUtils.createUiContext(mContext),
+            final VolumePanel volumePanel = new VolumePanel(getUiContext(),
                                                               (AudioService) getAudioService());
             if (ringerMode == AudioManager.RINGER_MODE_NORMAL) {
                 boolean vibrateSetting = Settings.System.getInt(mContext.getContentResolver(),
@@ -867,6 +867,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                                           | AudioManager.FLAG_VIBRATE);
         }
     };
+
+    private Context getUiContext() {
+        if (mUiContext == null) {
+            mUiContext = ThemeUtils.createUiContext(mContext);
+        }
+        return mUiContext != null ? mUiContext : mContext;
+    }
 
     void showGlobalActionsDialog() {
         if (mGlobalActions == null) {
@@ -1099,6 +1106,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         } else {
             screenTurnedOff(WindowManagerPolicy.OFF_BECAUSE_OF_USER);
         }
+
+        ThemeUtils.registerThemeChangeReceiver(context, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                mUiContext = null;
+            }
+        });
     }
 
     /**
