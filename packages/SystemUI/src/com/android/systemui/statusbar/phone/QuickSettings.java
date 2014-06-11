@@ -110,6 +110,8 @@ class QuickSettings {
 
     boolean mTilesSetUp = false;
     boolean mUseDefaultAvatar = false;
+    boolean mHideDataOnWifi = false;
+    boolean mlongToggle = true;
 
     private Handler mHandler;
 
@@ -118,12 +120,17 @@ class QuickSettings {
     private BatteryCircleMeterView mCircleBattery;
     private boolean mBatteryHasPercent;
 
+    public boolean longToggle() {
+        return mlongToggle;
+    }
+
     // The set of QuickSettingsTiles that have dynamic spans (and need to be updated on
     // configuration change)
     private final ArrayList<QuickSettingsTileView> mDynamicSpannedTiles =
             new ArrayList<QuickSettingsTileView>();
 
     public QuickSettings(Context context, QuickSettingsContainerView container) {
+
         mDevicePolicyManager
             = (DevicePolicyManager) context.getSystemService(Context.DEVICE_POLICY_SERVICE);
         mContext = context;
@@ -323,6 +330,13 @@ class QuickSettings {
     }
 
     private void addUserTiles(ViewGroup parent, LayoutInflater inflater) {
+        // Refresh longToggle state
+        boolean defValue = mContext.getResources().getBoolean(R.bool.config_longToggle);
+        boolean mlongToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                Settings.System.LONG_TOGGLE, defValue);
+
+        boolean LONG_PRESS_TOGGLES = !mlongToggle;
+
         QuickSettingsTileView userTile = (QuickSettingsTileView)
                 inflater.inflate(R.layout.quick_settings_tile, parent, false);
         userTile.setContent(R.layout.quick_settings_tile_user, inflater);
@@ -400,11 +414,19 @@ class QuickSettings {
     }
 
     private void addSystemTiles(ViewGroup parent, LayoutInflater inflater) {
+        // Refresh longToggle state
+        boolean defValue = mContext.getResources().getBoolean(R.bool.config_longToggle);
+        boolean mlongToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                Settings.System.LONG_TOGGLE, defValue);
+
+        boolean LONG_PRESS_TOGGLES = !mlongToggle;
+
         // Wi-fi
         final QuickSettingsTileView wifiTile = (QuickSettingsTileView)
                 inflater.inflate(R.layout.quick_settings_tile, parent, false);
         wifiTile.setContent(R.layout.quick_settings_tile_wifi, inflater);
         wifiTile.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
                 startSettingsActivity(android.provider.Settings.ACTION_WIFI_SETTINGS);
@@ -437,6 +459,12 @@ class QuickSettings {
         mModel.addWifiTile(wifiTile, new NetworkActivityCallback() {
             @Override
             public void refreshView(QuickSettingsTileView view, State state) {
+	        boolean defValue = mContext.getResources().getBoolean(R.bool.config_longToggle);
+	        boolean mlongToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                	Settings.System.LONG_TOGGLE, defValue);
+
+        	boolean LONG_PRESS_TOGGLES = !mlongToggle;
+
                 WifiState wifiState = (WifiState) state;
                 ImageView iv = (ImageView) view.findViewById(R.id.image);
                 iv.setImageResource(wifiState.iconId);

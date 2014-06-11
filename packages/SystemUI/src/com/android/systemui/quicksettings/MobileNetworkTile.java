@@ -63,14 +63,26 @@ public class MobileNetworkTile extends NetworkTile {
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (!mCm.getMobileDataEnabled()) {
-                    // None, onMobileDataSignalChanged will set final overlay image
-                    updateOverlayImage(NO_OVERLAY);
-                    mCm.setMobileDataEnabled(true);
-                } else {
-                    updateOverlayImage(DISABLED_OVERLAY);
-                    mCm.setMobileDataEnabled(false);
-                }
+       	 	boolean defValue = mContext.getResources().getBoolean(R.bool.config_longToggle);
+        	boolean mlongToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                	Settings.System.LONG_TOGGLE, defValue);
+
+		if (mlongToggle) {
+                    if (!mCm.getMobileDataEnabled()) {
+                        // None, onMobileDataSignalChanged will set final overlay image
+                        updateOverlayImage(NO_OVERLAY);
+                        mCm.setMobileDataEnabled(true);
+                    } else {
+                        updateOverlayImage(DISABLED_OVERLAY);
+                        mCm.setMobileDataEnabled(false);
+                    }
+		} else {
+                    Intent intent = new Intent();
+                    intent.setComponent(new ComponentName(
+                        "com.android.settings",
+                        "com.android.settings.Settings$DataUsageSummaryActivity"));
+                    startSettingsActivity(intent);
+		}
                 if (isFlipTilesEnabled()) {
                     flipTile(0);
                 }
@@ -81,11 +93,26 @@ public class MobileNetworkTile extends NetworkTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setComponent(new ComponentName(
+                boolean defValue = mContext.getResources().getBoolean(R.bool.config_longToggle);
+                boolean mlongToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                        Settings.System.LONG_TOGGLE, defValue);
+
+		if (!mlongToggle) {
+                    Intent intent = new Intent();
+                    intent.setComponent(new ComponentName(
                         "com.android.settings",
                         "com.android.settings.Settings$DataUsageSummaryActivity"));
-                startSettingsActivity(intent);
+                    startSettingsActivity(intent);
+		} else {
+                    if (!mCm.getMobileDataEnabled()) {
+                        // None, onMobileDataSignalChanged will set final overlay image
+                        updateOverlayImage(NO_OVERLAY);
+                        mCm.setMobileDataEnabled(true);
+                    } else {
+                        updateOverlayImage(DISABLED_OVERLAY);
+                        mCm.setMobileDataEnabled(false);
+                    }
+		}
             }
         };
     }

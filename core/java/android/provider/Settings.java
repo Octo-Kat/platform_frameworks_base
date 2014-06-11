@@ -2812,6 +2812,12 @@ public final class Settings {
     	public static final String HIDE_DATA_ON_WIFI = "hide_data_on_wifi";
 
         /**
+        * Configurable QR Short Toggle - up to per user defined
+        * @hide
+        */
+        public static final String LONG_TOGGLE = "long_toggle";
+
+        /**
         * Notification Power Widget - Custom Network Mode
         * @hide
         */
