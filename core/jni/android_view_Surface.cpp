@@ -39,6 +39,7 @@
 
 #include <SkCanvas.h>
 #include <SkBitmap.h>
+#include <SkImage.h>
 #include <SkRegion.h>
 
 #include <utils/misc.h>
@@ -178,7 +179,8 @@ static jboolean nativeIsConsumerRunningBehind(JNIEnv* env, jclass clazz, jint na
 static inline SkBitmap::Config convertPixelFormat(PixelFormat format) {
     /* note: if PIXEL_FORMAT_RGBX_8888 means that all alpha bytes are 0xFF, then
         we can map to SkBitmap::kARGB_8888_Config, and optionally call
-        bitmap.setIsOpaque(true) on the resulting SkBitmap (as an accelerator)
+        bitmap.setAlphaType(kOpaque_SkAlphaType) on the resulting SkBitmap
+        (as an accelerator)
     */
     switch (format) {
     case PIXEL_FORMAT_RGBX_8888:    return SkBitmap::kARGB_8888_Config;
@@ -188,9 +190,10 @@ static inline SkBitmap::Config convertPixelFormat(PixelFormat format) {
     }
 }
 
-static void nativeSetDirtyRegion(JNIEnv* env, jclass clazz,
+static void nativeSetDirtyRect(JNIEnv* env, jclass clazz,
         jint nativeObject, jobject dirtyRect) {
 
+#ifdef QCOM_BSP
     sp<Surface> surface(reinterpret_cast<Surface *>(nativeObject));
 
     if (!isSurfaceValid(surface)) {
@@ -198,23 +201,14 @@ static void nativeSetDirtyRegion(JNIEnv* env, jclass clazz,
         return;
     }
 
-    // get dirty region
-    Region dirtyRegion;
-    Rect dirty;
+    Rect rect;
+    rect.left = env->GetIntField(dirtyRect, gRectClassInfo.left);
+    rect.top = env->GetIntField(dirtyRect, gRectClassInfo.top);
+    rect.right = env->GetIntField(dirtyRect, gRectClassInfo.right);
+    rect.bottom = env->GetIntField(dirtyRect, gRectClassInfo.bottom);
 
-    dirty.left = env->GetIntField(dirtyRect, gRectClassInfo.left);
-    dirty.top = env->GetIntField(dirtyRect, gRectClassInfo.top);
-    dirty.right = env->GetIntField(dirtyRect, gRectClassInfo.right);
-    dirty.bottom = env->GetIntField(dirtyRect, gRectClassInfo.bottom);
-
-    if (!dirty.isEmpty()) {
-       dirtyRegion.set(dirty);
-    }
-
-    status_t err = surface->setDirtyRegion(&dirtyRegion);
-    if (err < 0) {
-        doThrowIAE(env);
-    }
+    surface->setDirtyRect(&rect);
+#endif
 }
 
 static inline void swapCanvasPtr(JNIEnv* env, jobject canvasObj, SkCanvas* newCanvas) {
@@ -263,7 +257,7 @@ static jint nativeLockCanvas(JNIEnv* env, jclass clazz,
     ssize_t bpr = outBuffer.stride * bytesPerPixel(outBuffer.format);
     bitmap.setConfig(convertPixelFormat(outBuffer.format), outBuffer.width, outBuffer.height, bpr);
     if (outBuffer.format == PIXEL_FORMAT_RGBX_8888) {
-        bitmap.setIsOpaque(true);
+        bitmap.setAlphaType(kOpaque_SkAlphaType);
     }
     if (outBuffer.width > 0 && outBuffer.height > 0) {
         bitmap.setPixels(outBuffer.bits);
@@ -398,8 +392,8 @@ static JNINativeMethod gSurfaceMethods[] = {
             (void*)nativeReadFromParcel },
     {"nativeWriteToParcel", "(ILandroid/os/Parcel;)V",
             (void*)nativeWriteToParcel },
-    {"nativeSetDirtyRegion", "(ILandroid/graphics/Rect;)V",
-           (void*)nativeSetDirtyRegion },
+    {"nativeSetDirtyRect", "(ILandroid/graphics/Rect;)V",
+           (void*)nativeSetDirtyRect },
 };
 
 int register_android_view_Surface(JNIEnv* env)

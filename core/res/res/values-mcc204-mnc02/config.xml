@@ -18,8 +18,8 @@
 -->
 
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <!-- Don't use roaming icon for considered operators -->
+    <!-- Tele2: Don't use roaming icon for T-Mo -->
     <string-array translatable="false" name="config_operatorConsideredNonRoaming">
-        <item>302</item>
+        <item>20416</item>
     </string-array>
 </resources>
