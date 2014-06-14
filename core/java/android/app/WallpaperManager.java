@@ -1255,4 +1255,11 @@ public class WallpaperManager {
     public void clear() throws IOException {
         setResource(com.android.internal.R.drawable.default_wallpaper);
     }
+
+    /**
+     * @hide
+     */
+    public void clearKeyguardWallpaper() {
+        sGlobals.clearKeyguardWallpaper();
+    }
 }
