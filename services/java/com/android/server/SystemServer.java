@@ -1,99 +1,110 @@
-    /*
-     * Copyright (C) 2006 The Android Open Source Project
-     * This code has been modified.  Portions copyright (C) 2010, T-Mobile USA, Inc.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *      http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
+/*
+ * Copyright (C) 2006 The Android Open Source Project
+ * This code has been modified.  Portions copyright (C) 2010, T-Mobile USA, Inc.
+ * Copyright (c) 2012, 2013, 2014. The Linux Foundation. All rights reserved.
+ * Not a Contribution.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-    package com.android.server;
+package com.android.server;
 
-    import android.app.ActivityManagerNative;
-    import android.bluetooth.BluetoothAdapter;
-    import android.content.ComponentName;
-    import android.content.ContentResolver;
-    import android.content.Context;
-    import android.content.Intent;
-    import android.content.IntentFilter;
-    import android.content.pm.IPackageManager;
-    import android.content.pm.PackageManager;
-    import android.content.pm.ThemeUtils;
-    import android.content.res.Configuration;
-    import android.content.res.ThemeConfig;
-    import android.media.AudioService;
-    import android.net.wifi.p2p.WifiP2pService;
-    import android.os.Environment;
-    import android.os.Handler;
-    import android.os.HandlerThread;
-    import android.os.Looper;
-    import android.os.RemoteException;
-    import android.os.ServiceManager;
-    import android.os.StrictMode;
-    import android.os.SystemClock;
-    import android.os.SystemProperties;
-    import android.os.UserHandle;
-    import android.service.dreams.DreamService;
-    import android.util.DisplayMetrics;
-    import android.util.EventLog;
-    import android.util.Log;
-    import android.util.Slog;
-    import android.view.WindowManager;
+import android.app.ActivityManagerNative;
+import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.IPackageManager;
+import android.content.pm.PackageManager;
+import android.content.pm.ThemeUtils;
+import android.content.res.Configuration;
+import android.content.res.ThemeConfig;
+import android.database.ContentObserver;
+import android.media.AudioService;
+import android.net.wifi.p2p.WifiP2pService;
+import android.os.Environment;
+import android.net.INetworkPolicyManager;
+import android.net.INetworkStatsService;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.INetworkManagementService;
+import android.os.RemoteException;
+import android.os.ServiceManager;
+import android.os.StrictMode;
+import android.os.SystemClock;
+import android.os.SystemProperties;
+import android.os.UserHandle;
+import android.provider.Settings;
+import android.service.dreams.DreamService;
+import android.util.DisplayMetrics;
+import android.util.EventLog;
+import android.util.Log;
+import android.util.Slog;
+import android.view.WindowManager;
 
-    import com.android.internal.R;
-    import com.android.internal.os.BinderInternal;
-    import com.android.internal.os.SamplingProfilerIntegration;
-    import com.android.server.accessibility.AccessibilityManagerService;
-    import com.android.server.accounts.AccountManagerService;
-    import com.android.server.am.ActivityManagerService;
-    import com.android.server.am.BatteryStatsService;
-    import com.android.server.content.ContentService;
-    import com.android.server.display.DisplayManagerService;
-    import com.android.server.dreams.DreamManagerService;
-    import com.android.server.gesture.GestureService;
-    import com.android.server.input.InputManagerService;
-    import com.android.server.media.MediaRouterService;
-    import com.android.server.net.NetworkPolicyManagerService;
-    import com.android.server.net.NetworkStatsService;
-    import com.android.server.os.SchedulingPolicyService;
-    import com.android.server.gesture.EdgeGestureService;
-    import com.android.server.pm.Installer;
-    import com.android.server.pm.PackageManagerService;
-    import com.android.server.pm.UserManagerService;
-    import com.android.server.power.PowerManagerService;
-    import com.android.server.power.ShutdownThread;
-    import com.android.server.print.PrintManagerService;
-    import com.android.server.search.SearchManagerService;
-    import com.android.server.usb.UsbService;
-    import com.android.server.wifi.WifiService;
-    import com.android.server.wm.WindowManagerService;
+import com.android.internal.R;
+import com.android.internal.os.BinderInternal;
+import com.android.internal.os.SamplingProfilerIntegration;
+import com.android.internal.util.MemInfoReader;
+import com.android.server.accessibility.AccessibilityManagerService;
+import com.android.server.accounts.AccountManagerService;
+import com.android.server.am.ActivityManagerService;
+import com.android.server.am.BatteryStatsService;
+import com.android.server.content.ContentService;
+import com.android.server.display.DisplayManagerService;
+import com.android.server.dreams.DreamManagerService;
+import com.android.server.gesture.GestureService;
+import com.android.server.input.InputManagerService;
+import com.android.server.media.MediaRouterService;
+import com.android.server.net.NetworkPolicyManagerService;
+import com.android.server.net.NetworkStatsService;
+import com.android.server.os.SchedulingPolicyService;
+import com.android.server.gesture.EdgeGestureService;
+import com.android.server.pm.Installer;
+import com.android.server.pm.PackageManagerService;
+import com.android.server.pm.UserManagerService;
+import com.android.server.power.PowerManagerService;
+import com.android.server.power.ShutdownThread;
+import com.android.server.print.PrintManagerService;
+import com.android.server.search.SearchManagerService;
+import com.android.server.usb.UsbService;
+import com.android.server.wifi.WifiService;
+import com.android.server.wm.WindowManagerService;
 
-    import dalvik.system.VMRuntime;
-    import dalvik.system.Zygote;
+import dalvik.system.VMRuntime;
+import dalvik.system.Zygote;
 
-    import java.io.File;
-    import java.util.Timer;
-    import java.util.TimerTask;
+import java.io.File;
+import java.util.Timer;
+import java.util.TimerTask;
 
-    class ServerThread {
-        private static final String TAG = "SystemServer";
-        private static final String ENCRYPTING_STATE = "trigger_restart_min_framework";
-        private static final String ENCRYPTED_STATE = "1";
+import dalvik.system.PathClassLoader;
+import java.lang.reflect.Constructor;
 
-        ContentResolver mContentResolver;
+class ServerThread {
+    private static final String TAG = "SystemServer";
+    private static final String ENCRYPTING_STATE = "trigger_restart_min_framework";
+    private static final String ENCRYPTED_STATE = "1";
 
-        void reportWtf(String msg, Throwable e) {
-            Slog.w(TAG, "***********************************************");
-            Log.wtf(TAG, "BOOT FAILURE " + msg, e);
-        }
+    ContentResolver mContentResolver;
+
+    void reportWtf(String msg, Throwable e) {
+        Slog.w(TAG, "***********************************************");
+        Log.wtf(TAG, "BOOT FAILURE " + msg, e);
+    }
 
         public void initAndLoop() {
             EventLog.writeEvent(EventLogTags.BOOT_PROGRESS_SYSTEM_RUN,
@@ -1189,6 +1200,15 @@
                         reportWtf("Icon Mapping failed", e);
                     }
 
+                try {
+                    // now that the system is up, apply default theme if applicable
+                    if (themeServiceF != null) themeServiceF.systemRunning();
+                    ThemeConfig themeConfig =
+                            ThemeConfig.getBootTheme(contextF.getContentResolver());
+                    String iconPkg = themeConfig.getIconPackPkgName();
+                    pmf.updateIconMapping(iconPkg);
+                } catch (Throwable e) {
+                    reportWtf("Icon Mapping failed", e);
                 }
             });
 

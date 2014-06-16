@@ -409,7 +409,6 @@ public final class Configuration implements Parcelable, Comparable<Configuration
     public static final int ORIENTATION_LANDSCAPE = 2;
     /** @deprecated Not currently supported or used. */
     @Deprecated public static final int ORIENTATION_SQUARE = 3;
-    
 
     /**
      * @hide
