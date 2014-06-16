@@ -354,12 +354,12 @@ interface ITelephony {
       */
      void mute(boolean mute);
 
-    /**
-     * Start playing DTMF tone for the specified digit.
-     *
-     * @param digit the digit that corresponds with the desired tone.
-     * @param timedShortcode whether the specified digit should be played as a timed short code.
-     */
+     /**
+      * Start playing DTMF tone for the specified digit.
+      *
+      * @param digit the digit that corresponds with the desired tone.
+      * @param timedShortcode whether the specified digit should be played as a timed short code.
+      */
      void playDtmfTone(char digit, boolean timedShortCode);
 
      /**
@@ -368,15 +368,16 @@ interface ITelephony {
      void stopDtmfTone();
 
      /**
-       * Register a callback.
-       */
-      void addListener(ITelephonyListener listener);
+      * Register a callback.
+      */
+     void addListener(ITelephonyListener listener);
 
-      /**
-       * Unregister a callback.
-       */
-      void removeListener(ITelephonyListener listener);
+     /**
+      * Unregister a callback.
+      */
+     void removeListener(ITelephonyListener listener);
 
-      int getLteOnGsmMode();
+     int getLteOnGsmMode();
+    
 }
 
