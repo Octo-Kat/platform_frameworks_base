@@ -4737,11 +4737,6 @@ public class PackageManagerService extends IPackageManager.Stub {
                     }
                 }
                 pkg.applicationInfo.dataDir = dataPath.getPath();
-                if (mShouldRestoreconData) {
-                    Slog.i(TAG, "SELinux relabeling of " + pkg.packageName + " issued.");
-                    mInstaller.restoreconData(pkg.packageName, pkg.applicationInfo.seinfo,
-                                pkg.applicationInfo.uid);
-                }
             } else {
                 if (DEBUG_PACKAGE_SCANNING) {
                     if ((parseFlags & PackageParser.PARSE_CHATTY) != 0)
