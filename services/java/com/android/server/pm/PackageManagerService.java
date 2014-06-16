@@ -11739,10 +11739,6 @@ public class PackageManagerService extends IPackageManager.Stub {
      */
     public void scanAvailableAsecs() {
         updateExternalMediaStatusInner(true, false, false);
-        if (mShouldRestoreconData) {
-            SELinuxMMAC.setRestoreconDone();
-            mShouldRestoreconData = false;
-        }
     }
 
     /*
