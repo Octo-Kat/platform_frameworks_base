@@ -93,6 +93,7 @@ import com.android.systemui.statusbar.phone.NavigationBarOverlay;
 import com.android.systemui.statusbar.policy.NotificationRowLayout;
 import com.android.systemui.statusbar.policy.activedisplay.ActiveDisplayView;
 import com.android.systemui.statusbar.policy.PieController;
+import com.android.systemui.statusbar.appcirclesidebar.AppCircleSidebar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -227,6 +228,8 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     protected AppSidebar mAppSidebar;
     protected int mSidebarPosition;
+
+    protected AppCircleSidebar mAppCircleSidebar;
 
     public IStatusBarService getStatusBarService() {
         return mBarService;
@@ -1367,22 +1370,65 @@ public abstract class BaseStatusBar extends SystemUI implements
         return lp;
     }
 	
-    class SidebarObserver extends ContentObserver {
+  class SidebarObserver extends ContentObserver {
         SidebarObserver(Handler handler) {
             super(handler);
         }
-
-        void observe() {
-            ContentResolver resolver = mContext.getContentResolver();
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.APP_SIDEBAR_POSITION), false, this);
-            update();
+ 
+    void observe() {
+        ContentResolver resolver = mContext.getContentResolver();
+        resolver.registerContentObserver(Settings.System.getUriFor(
+                Settings.System.APP_SIDEBAR_POSITION), false, this);
+        update();
         }
-
+   
+        protected void addAppCircleSidebar() {
+        if (mAppCircleSidebar == null) {
+            mAppCircleSidebar = (AppCircleSidebar) View.inflate(mContext, R.layout.app_circle_sidebar, null);
+            mWindowManager.addView(mAppCircleSidebar, getAppCircleSidebarLayoutParams());
+        }
+    }
+ 
+    protected void removeAppCircleSidebar() {
+        if (mAppCircleSidebar != null) {
+            mWindowManager.removeView(mAppCircleSidebar);
+        }
+    }
+ 
+    protected WindowManager.LayoutParams getAppCircleSidebarLayoutParams() {
+        int maxWidth =
+                mContext.getResources().getDimensionPixelSize(R.dimen.app_sidebar_trigger_width);
+ 
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                maxWidth,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_STATUS_BAR_SUB_PANEL,
+                0
+                | WindowManager.LayoutParams.FLAG_TOUCHABLE_WHEN_WAKING
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
+                | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
+                PixelFormat.TRANSLUCENT);
+        lp.privateFlags |= WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
+        lp.gravity = Gravity.TOP | Gravity.RIGHT;
+        lp.setTitle("AppCircleSidebar");
+ 
+        return lp;
+    }
+ 
+    protected void setIconHiddenByUser(String iconPackage, boolean hide) {
+        if (iconPackage == null
+                || iconPackage.isEmpty()
+                || iconPackage.equals("android")) {
+            return;
+          }
+ 	 }
         @Override
         public void onChange(boolean selfChange) {
-            update();
-        }
+            update();    
+	}
+	}
 
         public void update() {
             ContentResolver resolver = mContext.getContentResolver();
@@ -1618,5 +1664,4 @@ public abstract class BaseStatusBar extends SystemUI implements
             am.moveTaskToFront(lastAppId, am.MOVE_TASK_NO_USER_ACTION);
         }
     }
-
 }

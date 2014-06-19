@@ -2563,13 +2563,25 @@ public final class Settings {
          * @hide
          */
         public static final String SIP_ALWAYS = "SIP_ALWAYS";
-
+      /**
+         * Whether to display app circle sidebar
+         * @hide
+         */
+        public static final String ENABLE_APP_CIRCLE_BAR = "enable_app_circle_bar";
+ 
         /**
+         * A list of packages to include in app circle bar.
+         * This should be a string of packages separated by |
+         * @hide
+         */
+        public static final String WHITELIST_APP_CIRCLE_BAR = "whitelist_app_circle_bar";
+ 
+        /**
+         * Whether phone lockscreen uses 5 or 8 targets
          * One of the sip call options: Only if destination is a SIP address.
          * @hide
          */
         public static final String SIP_ADDRESS_ONLY = "SIP_ADDRESS_ONLY";
-
         /**
          * One of the sip call options: Always ask me each time.
          * @hide
