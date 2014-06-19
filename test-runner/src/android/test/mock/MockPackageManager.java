@@ -406,19 +406,6 @@ public class MockPackageManager extends PackageManager {
         return null;
     }
 
-    @Override
-    public Resources getThemedResourcesForApplication(String appPackageName, String themePkgName)
-    throws NameNotFoundException {
-        return null;
-    }
-
-    /** @hide */
-    @Override
-    public Resources getThemedResourcesForApplication(ApplicationInfo app, String themePkgName)
-    throws NameNotFoundException {
-        return null;
-    }
-
     /** @hide */
     @Override
     public Resources getThemedResourcesForApplication(String appPackageName, String themePkgName)
