@@ -439,9 +439,6 @@ public class PackageManagerService extends IPackageManager.Stub {
     // If mac_permissions.xml was found for seinfo labeling.
     boolean mFoundPolicyFile;
 
-    // If a recursive restorecon of /data/data/<pkg> is needed.
-    private boolean mShouldRestoreconData = SELinuxMMAC.shouldRestorecon();
-
     // All available activities, for your resolving pleasure.
     final ActivityIntentResolver mActivities =
             new ActivityIntentResolver();
