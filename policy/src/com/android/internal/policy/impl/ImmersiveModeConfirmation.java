@@ -23,7 +23,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ThemeUtils;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
@@ -70,8 +69,6 @@ public class ImmersiveModeConfirmation {
     private long mPanicTime;
     private String mPanicPackage;
     private WindowManager mWindowManager;
-    private boolean mStatusBarHidden;
-    private Context mUiContext;
 
     public ImmersiveModeConfirmation(Context context) {
         mContext = context;
@@ -81,12 +78,6 @@ public class ImmersiveModeConfirmation {
                 .getInteger(R.integer.config_immersive_mode_confirmation_panic);
         mWindowManager = (WindowManager)
                 mContext.getSystemService(Context.WINDOW_SERVICE);
-        ThemeUtils.registerThemeChangeReceiver(context, new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                mUiContext = null;
-            }
-        });
     }
 
     private long getNavBarExitDuration() {
@@ -176,13 +167,6 @@ public class ImmersiveModeConfirmation {
         }
     }
 
-    private Context getUiContext() {
-        if (mUiContext == null) {
-            mUiContext = ThemeUtils.createUiContext(mContext);
-        }
-        return mUiContext != null ? mUiContext : mContext;
-    }
-
     public WindowManager.LayoutParams getClingWindowLayoutParams() {
         final WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -252,13 +236,8 @@ public class ImmersiveModeConfirmation {
             float density = metrics.density;
 
             // create the confirmation cling
-            if (mStatusBarHidden) {
-                mClingLayout = (ViewGroup)
-                        View.inflate(getUiContext(), R.layout.immersive_mode_cling, null);
-            } else {
-                mClingLayout = (ViewGroup)
-                        View.inflate(getUiContext(), R.layout.immersive_mode_cling_bottom, null);
-            }
+            mClingLayout = (ViewGroup)
+                    View.inflate(getContext(), R.layout.immersive_mode_cling, null);
 
             final Button ok = (Button) mClingLayout.findViewById(R.id.ok);
             ok.setOnClickListener(new OnClickListener() {
