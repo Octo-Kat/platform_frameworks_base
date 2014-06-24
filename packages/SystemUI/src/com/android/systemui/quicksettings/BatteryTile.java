@@ -103,10 +103,28 @@ public class BatteryTile extends QuickSettingsTile implements BatteryStateChange
     }
 
     @Override
-    public void onBatteryLevelChanged(int level, boolean pluggedIn) {
+    public void onBatteryLevelChanged(boolean present, int level, boolean pluggedIn, int status) {
+        mPresent = present;
         mBatteryLevel = level;
         mPluggedIn = pluggedIn;
         updateResources();
+    }
+
+    @Override
+    public void onBatteryMeterModeChanged(BatteryMeterMode mode) {
+        // All the battery tiles (qs and ribbon) uses the NORMAL battery mode
+    }
+
+    @Override
+    public void onBatteryMeterShowPercent(boolean showPercent) {
+        // PowerWidget tile uses the same settings that status bar
+        if (mQsc.isRibbonMode()) {
+            mBatteryView.setShowPercent(showPercent);
+        }
+    }
+
+    protected BatteryMeterView getBatteryMeterView() {
+        return (BatteryMeterView) mTile.findViewById(R.id.battery);
     }
 
     @Override
