@@ -16,6 +16,7 @@ import com.android.systemui.statusbar.policy.NetworkController.NetworkSignalChan
 public class AirplaneModeTile extends QuickSettingsTile implements NetworkSignalChangedCallback{
     private NetworkController mController;
     private boolean enabled = false;
+    private boolean quickToggle = false;
 
     public AirplaneModeTile(Context context, QuickSettingsController qsc, NetworkController controller) {
         super(context, qsc);
@@ -25,25 +26,52 @@ public class AirplaneModeTile extends QuickSettingsTile implements NetworkSignal
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                // Change the system setting
-                Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    // Change the system setting
+                    Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
                                         !enabled ? 1 : 0);
 
-                // Post the intent
-                Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-                intent.putExtra("state", !enabled);
-                mContext.sendBroadcast(intent);
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                    // Post the intent
+                    Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+                    intent.putExtra("state", !enabled);
+                    mContext.sendBroadcast(intent);
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    startSettingsActivity(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
                 }
                 return true;
             }
         };
+
         mOnClick = new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                startSettingsActivity(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    startSettingsActivity(android.provider.Settings.ACTION_WIRELESS_SETTINGS);
+                } else {
+                    // Change the system setting
+                    Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON,
+                                        !enabled ? 1 : 0);
+
+                    // Post the intent
+                    Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+                    intent.putExtra("state", !enabled);
+                    mContext.sendBroadcast(intent);
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
     }

@@ -17,18 +17,27 @@ import com.android.systemui.statusbar.phone.QuickSettingsController;
 
 public class TorchTile extends QuickSettingsTile {
     private boolean mActive = false;
+    private boolean quickToggle = false;
 
-    public TorchTile(Context context, 
+    public TorchTile(Context context,
             QuickSettingsController qsc, Handler handler) {
         super(context, qsc);
 
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                Intent i = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
-                mContext.sendBroadcast(i);
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent i = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
+                    mContext.sendBroadcast(i);
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    startSettingsActivity(TorchConstants.INTENT_LAUNCH_APP);
                 }
                 return true;
             }
@@ -37,7 +46,19 @@ public class TorchTile extends QuickSettingsTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(TorchConstants.INTENT_LAUNCH_APP);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    startSettingsActivity(TorchConstants.INTENT_LAUNCH_APP);
+                } else {
+                    Intent i = new Intent(TorchConstants.ACTION_TOGGLE_STATE);
+                    mContext.sendBroadcast(i);
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
 

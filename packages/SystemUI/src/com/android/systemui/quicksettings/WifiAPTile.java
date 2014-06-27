@@ -15,6 +15,7 @@ import com.android.systemui.statusbar.phone.QuickSettingsController;
 public class WifiAPTile extends QuickSettingsTile {
 
     private static WifiManager mWifiManager;
+    private boolean quickToggle = false;
 
     public WifiAPTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -24,31 +25,65 @@ public class WifiAPTile extends QuickSettingsTile {
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                int state = mWifiManager.getWifiApState();
-                switch (state) {
-                    case WifiManager.WIFI_AP_STATE_ENABLING:
-                    case WifiManager.WIFI_AP_STATE_ENABLED:
-                        setSoftapEnabled(false);
-                        break;
-                    case WifiManager.WIFI_AP_STATE_DISABLING:
-                    case WifiManager.WIFI_AP_STATE_DISABLED:
-                        setSoftapEnabled(true);
-                        break;
-                }
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    int state = mWifiManager.getWifiApState();
+                    switch (state) {
+                        case WifiManager.WIFI_AP_STATE_ENABLING:
+                        case WifiManager.WIFI_AP_STATE_ENABLED:
+                            setSoftapEnabled(false);
+                            break;
+                        case WifiManager.WIFI_AP_STATE_DISABLING:
+                        case WifiManager.WIFI_AP_STATE_DISABLED:
+                            setSoftapEnabled(true);
+                            break;
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
         };
+
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+                   startSettingsActivity(intent);
+                } else {
+                    int state = mWifiManager.getWifiApState();
+                    switch (state) {
+                        case WifiManager.WIFI_AP_STATE_ENABLING:
+                        case WifiManager.WIFI_AP_STATE_ENABLED:
+                            setSoftapEnabled(false);
+                            break;
+                        case WifiManager.WIFI_AP_STATE_DISABLING:
+                        case WifiManager.WIFI_AP_STATE_DISABLED:
+                            setSoftapEnabled(true);
+                            break;
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+
+                }
             }
         };
+
         qsc.registerAction(WifiManager.WIFI_AP_STATE_CHANGED_ACTION, this);
     }
 

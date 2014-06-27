@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.BluetoothStateChangeCallback;
 import android.content.Context;
 import android.content.Intent;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -20,6 +21,7 @@ public class BluetoothTile extends QuickSettingsTile implements BluetoothStateCh
     private boolean connected = false;
     private BluetoothAdapter mBluetoothAdapter;
     private BluetoothController mController;
+    private boolean quickToggle = false;
 
     public BluetoothTile(Context context, QuickSettingsController qsc, BluetoothController controller) {
         super(context, qsc);
@@ -32,13 +34,22 @@ public class BluetoothTile extends QuickSettingsTile implements BluetoothStateCh
 
             @Override
             public boolean onLongClick(View v) {
-                if(enabled){
-                    mBluetoothAdapter.disable();
-                }else{
-                    mBluetoothAdapter.enable();
-                }
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    if(enabled){
+                        mBluetoothAdapter.disable();
+                    }else{
+                        mBluetoothAdapter.enable();
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                // Quick Toggle On - Invert the Action
+                    startSettingsActivity(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
                 }
                 return true;
             }
@@ -48,9 +59,24 @@ public class BluetoothTile extends QuickSettingsTile implements BluetoothStateCh
 
             @Override
             public void onClick(View v) {
-                startSettingsActivity(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                if (!quickToggle) {
+                    startSettingsActivity(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+                } else {
+                    if(enabled){
+                        mBluetoothAdapter.disable();
+                    }else{
+                        mBluetoothAdapter.enable();
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
+
         qsc.registerAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED, this);
         qsc.registerAction(BluetoothAdapter.ACTION_STATE_CHANGED, this);
     }

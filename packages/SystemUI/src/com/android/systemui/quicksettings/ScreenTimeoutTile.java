@@ -28,6 +28,7 @@ public class ScreenTimeoutTile extends QuickSettingsTile {
     // cm modes
     private static final int CM_MODE_15_60_300 = 0;
     private static final int CM_MODE_30_120_300 = 1;
+    private boolean quickToggle = false;
 
     public ScreenTimeoutTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -35,20 +36,42 @@ public class ScreenTimeoutTile extends QuickSettingsTile {
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                toggleState();
-                updateResources();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    Intent intent = new Intent("android.settings.DISPLAY_SETTINGS");
+                    startSettingsActivity(intent);
                 }
-				return true;
+                return true;
             }
         };
 
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent("android.settings.DISPLAY_SETTINGS");
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent("android.settings.DISPLAY_SETTINGS");
+                    startSettingsActivity(intent);
+                } else {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+
+                }
             }
         };
 

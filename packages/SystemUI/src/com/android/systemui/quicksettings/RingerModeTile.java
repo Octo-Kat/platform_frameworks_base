@@ -31,6 +31,7 @@ public class RingerModeTile extends QuickSettingsTile {
 
     private AudioManager mAudioManager;
     private Vibrator mVibrator;
+    private boolean quickToggle = false;
 
     public RingerModeTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -43,10 +44,18 @@ public class RingerModeTile extends QuickSettingsTile {
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                toggleState();
-                updateResources();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
                 }
                 return true;
             }
@@ -55,9 +64,22 @@ public class RingerModeTile extends QuickSettingsTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
+                } else {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
+
         qsc.registerAction(AudioManager.RINGER_MODE_CHANGED_ACTION, this);
         qsc.registerObservedContent(
                 Settings.System.getUriFor(Settings.System.EXPANDED_RING_MODE), this);

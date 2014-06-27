@@ -3,6 +3,7 @@ package com.android.systemui.quicksettings;
 import android.content.Context;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 
@@ -15,18 +16,30 @@ public class NfcTile extends QuickSettingsTile {
 
     private static NfcAdapter mNfcAdapter;
     private static final int NFC_ADAPTER_UNKNOWN = -100;
+    private boolean quickToggle = false;
 
-    public NfcTile(Context context, 
+    public NfcTile(Context context,
             QuickSettingsController qsc) {
         super(context, qsc);
 
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                toggleState();
-                updateResources();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                       flipTile(0);
+                    }
+                } else {
+                    Intent intent = new Intent("android.settings.NFC_SETTINGS");
+                    intent.addCategory(Intent.CATEGORY_DEFAULT);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
@@ -35,10 +48,22 @@ public class NfcTile extends QuickSettingsTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent("android.settings.NFC_SETTINGS");
-                intent.addCategory(Intent.CATEGORY_DEFAULT);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent("android.settings.NFC_SETTINGS");
+                    intent.addCategory(Intent.CATEGORY_DEFAULT);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
+                } else {
+                    toggleState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                       flipTile(0);
+                    }
+                }
             }
         };
 

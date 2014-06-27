@@ -20,6 +20,7 @@ import java.util.List;
 public class LteTile extends QuickSettingsTile {
 
     private Context mContext;
+    private boolean quickToggle = false;
 
     public LteTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -29,10 +30,21 @@ public class LteTile extends QuickSettingsTile {
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                toggleLteState();
-                updateResources();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    toggleLteState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.phone", "com.android.phone.Settings");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
@@ -41,10 +53,23 @@ public class LteTile extends QuickSettingsTile {
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setClassName("com.android.phone", "com.android.phone.Settings");
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.phone", "com.android.phone.Settings");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
+                } else {
+                    toggleLteState();
+                    updateResources();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+
+                }
             }
         };
 

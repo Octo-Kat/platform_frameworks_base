@@ -118,6 +118,9 @@
     <!-- Hide Mobile Data on WiFi -->
     <bool name="config_hideDataOnWifi">false</bool>
 
+    <!-- Enable quickToggle -->
+    <bool name="config_quickToggle">false</bool>
+
     <!-- Sensivity of pie gestures controlls.
         Must be minimum 1 and maximum 10 (See @EdgeServiceConstants.java).
         Default for pie is high sensivity -->

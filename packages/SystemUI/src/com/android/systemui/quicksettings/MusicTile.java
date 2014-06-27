@@ -56,6 +56,7 @@ public class MusicTile extends QuickSettingsTile {
 
     private RemoteController mRemoteController;
     private IAudioService mAudioService = null;
+    private boolean quickToggle = false;
 
     public MusicTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -68,15 +69,31 @@ public class MusicTile extends QuickSettingsTile {
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
-            return true;
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                } else {
+                    sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_NEXT);
+                }
+                return true;
             }
         };
 
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_NEXT);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_NEXT);
+                } else {
+                    sendMediaButtonClick(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+                }
             }
         };
 

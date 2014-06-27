@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 
@@ -17,6 +18,7 @@ public class UsbTetherTile extends QuickSettingsTile {
     private boolean mUsbConnected = false;
     private boolean mMassStorageActive = false;
     private String[] mUsbRegexs;
+    private boolean quickToggle = false;
 
     private final String TAG = "UsbTetherTile";
 
@@ -26,11 +28,21 @@ public class UsbTetherTile extends QuickSettingsTile {
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (mUsbConnected) {
-                    setUsbTethering(!mUsbTethered);
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
-                }
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    if (mUsbConnected) {
+                        setUsbTethering(!mUsbTethered);
+                        if (isFlipTilesEnabled()) {
+                            flipTile(0);
+                        }
+                    }
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
@@ -38,11 +50,25 @@ public class UsbTetherTile extends QuickSettingsTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
-                startSettingsActivity(intent);
+               quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings", "com.android.settings.TetherSettings");
+                    startSettingsActivity(intent);
+                } else {
+                    if (mUsbConnected) {
+                        setUsbTethering(!mUsbTethered);
+                        if (isFlipTilesEnabled()) {
+                            flipTile(0);
+                        }
+                    }
+                }
             }
         };
+
         qsc.registerAction(ConnectivityManager.ACTION_TETHER_STATE_CHANGED, this);
         qsc.registerAction(UsbManager.ACTION_USB_STATE, this);
         qsc.registerAction(Intent.ACTION_MEDIA_SHARED, this);

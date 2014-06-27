@@ -44,6 +44,7 @@ public class MobileNetworkTypeTile extends QuickSettingsTile implements NetworkS
     private int mIntendedMode = NO_NETWORK_MODE_YET;
     private int mInternalState = STATE_INTERMEDIATE;
     private int mState;
+    private boolean quickToggle = false;
 
     public MobileNetworkTypeTile(Context context, QuickSettingsController qsc, NetworkController controller) {
         super(context, qsc);
@@ -53,41 +54,52 @@ public class MobileNetworkTypeTile extends QuickSettingsTile implements NetworkS
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                int currentMode = getCurrentCMMode();
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
 
-                Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
-                switch (mMode) {
-                    case Phone.NT_MODE_WCDMA_PREF:
-                    case Phone.NT_MODE_GSM_UMTS:
-                        intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
-                        mInternalState = STATE_TURNING_OFF;
-                        mIntendedMode = Phone.NT_MODE_GSM_ONLY;
-                        break;
-                    case Phone.NT_MODE_WCDMA_ONLY:
-                        if (currentMode == CM_MODE_3GONLY) {
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    int currentMode = getCurrentCMMode();
+
+                    Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
+                    switch (mMode) {
+                        case Phone.NT_MODE_WCDMA_PREF:
+                        case Phone.NT_MODE_GSM_UMTS:
                             intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
                             mInternalState = STATE_TURNING_OFF;
                             mIntendedMode = Phone.NT_MODE_GSM_ONLY;
-                        } else {
-                            intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
-                            mInternalState = STATE_TURNING_ON;
-                            mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
-                        }
-                        break;
-                    case Phone.NT_MODE_GSM_ONLY:
-                        if (currentMode == CM_MODE_3GONLY || currentMode == CM_MODE_BOTH) {
-                            intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_ONLY);
-                            mInternalState = STATE_TURNING_ON;
-                            mIntendedMode = Phone.NT_MODE_WCDMA_ONLY;
-                        } else {
-                            intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
-                            mInternalState = STATE_TURNING_ON;
-                            mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
-                        }
-                        break;
+                            break;
+                        case Phone.NT_MODE_WCDMA_ONLY:
+                            if (currentMode == CM_MODE_3GONLY) {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
+                                mInternalState = STATE_TURNING_OFF;
+                                mIntendedMode = Phone.NT_MODE_GSM_ONLY;
+                            } else {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
+                            }
+                            break;
+                        case Phone.NT_MODE_GSM_ONLY:
+                            if (currentMode == CM_MODE_3GONLY || currentMode == CM_MODE_BOTH) {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_ONLY);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_ONLY;
+                            } else {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
+                            }
+                            break;
+                    }
+                    mMode = NETWORK_MODE_UNKNOWN;
+                    mContext.sendBroadcast(intent);
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.phone", "com.android.phone.Settings");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
                 }
-                mMode = NETWORK_MODE_UNKNOWN;
-                mContext.sendBroadcast(intent);
                 return true;
             }
         };
@@ -95,10 +107,53 @@ public class MobileNetworkTypeTile extends QuickSettingsTile implements NetworkS
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setClassName("com.android.phone", "com.android.phone.Settings");
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.phone", "com.android.phone.Settings");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startSettingsActivity(intent);
+                } else {
+                    int currentMode = getCurrentCMMode();
+
+                    Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
+                    switch (mMode) {
+                        case Phone.NT_MODE_WCDMA_PREF:
+                        case Phone.NT_MODE_GSM_UMTS:
+                            intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
+                            mInternalState = STATE_TURNING_OFF;
+                            mIntendedMode = Phone.NT_MODE_GSM_ONLY;
+                            break;
+                        case Phone.NT_MODE_WCDMA_ONLY:
+                            if (currentMode == CM_MODE_3GONLY) {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_GSM_ONLY);
+                                mInternalState = STATE_TURNING_OFF;
+                                mIntendedMode = Phone.NT_MODE_GSM_ONLY;
+                            } else {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
+                            }
+                            break;
+                        case Phone.NT_MODE_GSM_ONLY:
+                            if (currentMode == CM_MODE_3GONLY || currentMode == CM_MODE_BOTH) {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_ONLY);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_ONLY;
+                            } else {
+                                intent.putExtra(EXTRA_NETWORK_MODE, Phone.NT_MODE_WCDMA_PREF);
+                                mInternalState = STATE_TURNING_ON;
+                                mIntendedMode = Phone.NT_MODE_WCDMA_PREF;
+                            }
+                            break;
+                    }
+                    mMode = NETWORK_MODE_UNKNOWN;
+                    mContext.sendBroadcast(intent);
+                }
+
             }
         };
 

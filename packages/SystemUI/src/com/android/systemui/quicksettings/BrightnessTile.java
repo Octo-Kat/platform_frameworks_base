@@ -18,6 +18,7 @@ import com.android.systemui.settings.BrightnessController.BrightnessStateChangeC
 public class BrightnessTile extends QuickSettingsTile implements BrightnessStateChangeCallback {
 
     private static final String TAG = "BrightnessTile";
+    private boolean quickToggle = false;
 
     public BrightnessTile(Context context, final QuickSettingsController qsc) {
         super(context, qsc);
@@ -25,8 +26,16 @@ public class BrightnessTile extends QuickSettingsTile implements BrightnessState
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                qsc.mBar.collapseAllPanels(true);
-                showBrightnessDialog();
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    qsc.mBar.collapseAllPanels(true);
+                    showBrightnessDialog();
+                } else {
+                    startSettingsActivity(Settings.ACTION_DISPLAY_SETTINGS);
+                }
                 return true;
             }
         };
@@ -34,9 +43,17 @@ public class BrightnessTile extends QuickSettingsTile implements BrightnessState
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(Settings.ACTION_DISPLAY_SETTINGS);
-            }
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
 
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    startSettingsActivity(Settings.ACTION_DISPLAY_SETTINGS);
+                } else {
+                    qsc.mBar.collapseAllPanels(true);
+                    showBrightnessDialog();
+                }
+            }
         };
 
         qsc.registerObservedContent(Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), this);

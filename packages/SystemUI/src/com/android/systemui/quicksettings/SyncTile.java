@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SyncStatusObserver;
 import android.os.Handler;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 
@@ -16,17 +17,30 @@ public class SyncTile extends QuickSettingsTile {
 
     private Object mSyncObserverHandle = null;
     private Handler mHandler;
+    private boolean quickToggle = false;
+
     public SyncTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
 
         mOnLongClick = new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                toggleState();
-                updateResources();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
-                }
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+	                toggleState();
+        	        updateResources();
+                	if (isFlipTilesEnabled()) {
+	                    flipTile(0);
+        	        }
+		} else {
+	                Intent intent = new Intent("android.settings.SYNC_SETTINGS");
+        	        intent.addCategory(Intent.CATEGORY_DEFAULT);
+                	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	                startSettingsActivity(intent);
+		}
                 return true;
             }
         };
@@ -34,10 +48,22 @@ public class SyncTile extends QuickSettingsTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent("android.settings.SYNC_SETTINGS");
-                intent.addCategory(Intent.CATEGORY_DEFAULT);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+	                Intent intent = new Intent("android.settings.SYNC_SETTINGS");
+        	        intent.addCategory(Intent.CATEGORY_DEFAULT);
+                	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+	                startSettingsActivity(intent);
+		} else {
+                        toggleState();
+                        updateResources();
+                        if (isFlipTilesEnabled()) {
+                            flipTile(0);
+                        }
+		}
             }
         };
         mHandler = new Handler();

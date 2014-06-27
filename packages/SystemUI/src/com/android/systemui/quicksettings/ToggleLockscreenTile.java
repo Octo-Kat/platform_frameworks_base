@@ -5,6 +5,7 @@ import android.app.KeyguardManager.KeyguardLock;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -23,6 +24,7 @@ public class ToggleLockscreenTile extends QuickSettingsTile
     private static KeyguardLock sLock = null;
     private static int sLockTileCount = 0;
     private static boolean sDisabledLockscreen = false;
+    private boolean quickToggle = false;
 
     public ToggleLockscreenTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -31,11 +33,19 @@ public class ToggleLockscreenTile extends QuickSettingsTile
 
             @Override
             public boolean onLongClick(View v) {
-                sDisabledLockscreen = !sDisabledLockscreen;
-                mPrefs.edit().putBoolean(KEY_DISABLED, sDisabledLockscreen).apply();
-                updateLockscreenState();
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    sDisabledLockscreen = !sDisabledLockscreen;
+                    mPrefs.edit().putBoolean(KEY_DISABLED, sDisabledLockscreen).apply();
+                    updateLockscreenState();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    startSettingsActivity("android.settings.SECURITY_SETTINGS");
                 }
                 return true;
             }
@@ -45,7 +55,20 @@ public class ToggleLockscreenTile extends QuickSettingsTile
 
             @Override
             public void onClick(View v) {
-                startSettingsActivity("android.settings.SECURITY_SETTINGS");
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    startSettingsActivity("android.settings.SECURITY_SETTINGS");
+                } else {
+                    sDisabledLockscreen = !sDisabledLockscreen;
+                    mPrefs.edit().putBoolean(KEY_DISABLED, sDisabledLockscreen).apply();
+                    updateLockscreenState();
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
     }

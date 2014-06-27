@@ -22,6 +22,7 @@ public class GPSTile extends QuickSettingsTile implements LocationSettingsChange
     ContentResolver mContentResolver;
     private LocationController mLocationController;
     private boolean mLocationEnabled;
+    private boolean quickToggle = false;
 
     public GPSTile(Context context, QuickSettingsController qsc) {
         super(context, qsc);
@@ -33,10 +34,18 @@ public class GPSTile extends QuickSettingsTile implements LocationSettingsChange
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                mLocationController.setLocationEnabled(!mLocationEnabled);
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
-                }
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+	                mLocationController.setLocationEnabled(!mLocationEnabled);
+        	        if (isFlipTilesEnabled()) {
+                	    flipTile(0);
+	                }
+		} else {
+	                startSettingsActivity(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+		}
                 return true;
             }
         };
@@ -44,7 +53,18 @@ public class GPSTile extends QuickSettingsTile implements LocationSettingsChange
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startSettingsActivity(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+	                startSettingsActivity(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+		} else {
+                        mLocationController.setLocationEnabled(!mLocationEnabled);
+                        if (isFlipTilesEnabled()) {
+                            flipTile(0);
+                        }
+		}
             }
         };
     }

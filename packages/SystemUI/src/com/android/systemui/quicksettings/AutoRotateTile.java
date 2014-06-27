@@ -12,11 +12,12 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 
 import com.android.internal.view.RotationPolicy;
-import com.android.systemui.R; 
+import com.android.systemui.R;
 import com.android.systemui.statusbar.phone.QuickSettingsController;
 import com.android.systemui.statusbar.phone.QuickSettingsContainerView;
 
 public class AutoRotateTile extends QuickSettingsTile {
+    private boolean quickToggle = false;
 
     public AutoRotateTile(Context context, QuickSettingsController qsc, Handler handler) {
         super(context, qsc);
@@ -24,9 +25,20 @@ public class AutoRotateTile extends QuickSettingsTile {
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                RotationPolicy.setRotationLock(mContext, getAutoRotation());
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    RotationPolicy.setRotationLock(mContext, getAutoRotation());
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                } else {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings",
+                        "com.android.settings.Settings$DisplayRotationSettingsActivity");
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
@@ -35,12 +47,24 @@ public class AutoRotateTile extends QuickSettingsTile {
         mOnClick = new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.setClassName("com.android.settings",
-                    "com.android.settings.Settings$DisplayRotationSettingsActivity");
-                startSettingsActivity(intent);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent(Intent.ACTION_MAIN);
+                    intent.setClassName("com.android.settings",
+                        "com.android.settings.Settings$DisplayRotationSettingsActivity");
+                    startSettingsActivity(intent);
+                } else {
+                    RotationPolicy.setRotationLock(mContext, getAutoRotation());
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+                }
             }
         };
+
         qsc.registerObservedContent(Settings.System.getUriFor(Settings.System.ACCELEROMETER_ROTATION)
                 , this);
     }

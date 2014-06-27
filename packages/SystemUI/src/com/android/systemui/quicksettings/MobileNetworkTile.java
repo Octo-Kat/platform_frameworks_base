@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
+import android.provider.Settings;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -51,6 +52,7 @@ public class MobileNetworkTile extends NetworkTile {
     private String dataContentDescription;
     private String signalContentDescription;
     private boolean mWifiOn = false;
+    private boolean quickToggle = false;
 
     private ConnectivityManager mCm;
 
@@ -63,16 +65,28 @@ public class MobileNetworkTile extends NetworkTile {
         mOnLongClick = new OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (!mCm.getMobileDataEnabled()) {
-                    // None, onMobileDataSignalChanged will set final overlay image
-                    updateOverlayImage(NO_OVERLAY);
-                    mCm.setMobileDataEnabled(true);
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    if (!mCm.getMobileDataEnabled()) {
+                        // None, onMobileDataSignalChanged will set final overlay image
+                        updateOverlayImage(NO_OVERLAY);
+                        mCm.setMobileDataEnabled(true);
+                    } else {
+                        updateOverlayImage(DISABLED_OVERLAY);
+                        mCm.setMobileDataEnabled(false);
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
                 } else {
-                    updateOverlayImage(DISABLED_OVERLAY);
-                    mCm.setMobileDataEnabled(false);
-                }
-                if (isFlipTilesEnabled()) {
-                    flipTile(0);
+                    Intent intent = new Intent();
+                    intent.setComponent(new ComponentName(
+                        "com.android.settings",
+                        "com.android.settings.Settings$DataUsageSummaryActivity"));
+                    startSettingsActivity(intent);
                 }
                 return true;
             }
@@ -81,11 +95,30 @@ public class MobileNetworkTile extends NetworkTile {
         mOnClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setComponent(new ComponentName(
+                quickToggle = Settings.System.getBoolean(mContext.getContentResolver(),
+                         Settings.System.QUICK_TOGGLE, mContext.getResources().getBoolean(R.bool.config_quickToggle));
+
+                // Quick Toggle is Off, function normally
+                if (!quickToggle) {
+                    Intent intent = new Intent();
+                    intent.setComponent(new ComponentName(
                         "com.android.settings",
                         "com.android.settings.Settings$DataUsageSummaryActivity"));
-                startSettingsActivity(intent);
+                    startSettingsActivity(intent);
+                } else {
+                    if (!mCm.getMobileDataEnabled()) {
+                        // None, onMobileDataSignalChanged will set final overlay image
+                        updateOverlayImage(NO_OVERLAY);
+                        mCm.setMobileDataEnabled(true);
+                    } else {
+                        updateOverlayImage(DISABLED_OVERLAY);
+                        mCm.setMobileDataEnabled(false);
+                    }
+                    if (isFlipTilesEnabled()) {
+                        flipTile(0);
+                    }
+
+                }
             }
         };
     }

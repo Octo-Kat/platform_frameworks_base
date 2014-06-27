@@ -2818,6 +2818,12 @@ public final class Settings {
     	*/
     	public static final String HIDE_DATA_ON_WIFI = "hide_data_on_wifi";
 
+       /**
+        * Configurable QS Quick Toggle - up to per user defined
+        * @hide
+        */
+        public static final String QUICK_TOGGLE = "quick_toggle";
+
         /**
         * Notification Power Widget - Custom Network Mode
         * @hide
