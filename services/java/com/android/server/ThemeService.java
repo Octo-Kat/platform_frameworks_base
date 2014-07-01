@@ -230,6 +230,28 @@ public class ThemeService extends IThemeService.Stub {
         postFinish(true, pkgName, components);
     }
 
+    private void doApplyDefaultTheme() {
+        final ContentResolver resolver = mContext.getContentResolver();
+        final String defaultThemePkg = Settings.Secure.getString(resolver,
+                Settings.Secure.DEFAULT_THEME_PACKAGE);
+        if (!TextUtils.isEmpty(defaultThemePkg)) {
+            String defaultThemeComponents = Settings.Secure.getString(resolver,
+                    Settings.Secure.DEFAULT_THEME_COMPONENTS);
+            List<String> components;
+            if (TextUtils.isEmpty(defaultThemeComponents)) {
+                components = ThemeUtils.getAllComponents();
+            } else {
+                components = new ArrayList<String>(
+                        Arrays.asList(defaultThemeComponents.split("\\|")));
+            }
+            try {
+                requestThemeChange(defaultThemePkg, components);
+            } catch (RemoteException e) {
+                Log.w(TAG, "Unable to set default theme", e);
+            }
+        }
+    }
+
     private void updateProvider(List<String> components, String pkgName) {
         ContentValues values = new ContentValues();
         values.put(ThemesContract.MixnMatchColumns.COL_VALUE, pkgName);
@@ -780,43 +802,6 @@ public class ThemeService extends IThemeService.Stub {
         File anim = new File(SYSTEM_THEME_PATH + File.separator + "bootanimation.zip");
         if (anim.exists())
             anim.delete();
-    }
-
-    public void doApplyDefaultTheme() {
-
-        final ContentResolver resolver = mContext.getContentResolver();
-        final String defaultThemePkg = Settings.Secure.getString(resolver,
-                Settings.Secure.DEFAULT_THEME_PACKAGE);
-        final boolean shouldApply = !TextUtils.isEmpty(defaultThemePkg) &&
-                Settings.Secure.getInt(resolver,
-                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 0) == 0;
-        if (shouldApply) {
-            String defaultThemeComponents = Settings.Secure.getString(resolver,
-                    Settings.Secure.DEFAULT_THEME_COMPONENTS);
-            List<String> components;
-            if (TextUtils.isEmpty(defaultThemeComponents)) {
-                components = new ArrayList<String>(9);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_FONTS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_LAUNCHER);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_ALARMS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_BOOT_ANIM);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_ICONS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_LOCKSCREEN);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_NOTIFICATIONS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_OVERLAYS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_RINGTONES);
-            } else {
-                components = new ArrayList<String>(
-                        Arrays.asList(defaultThemeComponents.split("\\|")));
-            }
-            try {
-                requestThemeChange(defaultThemePkg, components);
-                Settings.Secure.putInt(resolver,
-                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 1);
-            } catch (RemoteException e) {
-                Log.w(TAG, "Unable to set default theme", e);
-            }
-        }
     }
 
     private BroadcastReceiver mWallpaperChangeReceiver = new BroadcastReceiver() {
