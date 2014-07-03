@@ -58,7 +58,6 @@ import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Slog;
-import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -87,17 +86,15 @@ public class KeyguardHostView extends KeyguardViewBase {
     // Found in KeyguardAppWidgetPickActivity.java
     static final int APPWIDGET_HOST_ID = 0x4B455947;
 
-    private final int MAX_WIDGETS = 20;
+    private final int MAX_WIDGETS = 5;
 
     private AppWidgetHost mAppWidgetHost;
     private AppWidgetManager mAppWidgetManager;
     private KeyguardWidgetPager mAppWidgetContainer;
-    private KeyguardWidgetPager mAppWidgetContainerHidden;
     private KeyguardSecurityViewFlipper mSecurityViewContainer;
     private KeyguardSelectorView mKeyguardSelectorView;
     private KeyguardTransportControlView mTransportControl;
     private boolean mIsVerifyUnlockOnly;
-    private View mExpandChallengeView;
     private boolean mEnableFallback; // TODO: This should get the value from KeyguardPatternView
     private SecurityMode mCurrentSecuritySelection = SecurityMode.Invalid;
     private int mAppWidgetToShow;
@@ -374,21 +371,8 @@ public class KeyguardHostView extends KeyguardViewBase {
         // Grab instances of and make any necessary changes to the main layouts. Create
         // view state manager and wire up necessary listeners / callbacks.
         View deleteDropTarget = findViewById(R.id.keyguard_widget_pager_delete_target);
-        if (Settings.System.getIntForUser(getContext().getContentResolver(),
-                Settings.System.LOCKSCREEN_USE_WIDGET_CONTAINER_CAROUSEL,
-                0, UserHandle.USER_CURRENT) == 1) {
-            mAppWidgetContainerHidden =
-                (KeyguardWidgetPager) findViewById(R.id.app_widget_container);
-            mAppWidgetContainer =
-                (KeyguardWidgetPager) findViewById(R.id.app_widget_container_carousel);
-        } else {
-            mAppWidgetContainerHidden =
-                (KeyguardWidgetPager) findViewById(R.id.app_widget_container_carousel);
-            mAppWidgetContainer =
-                (KeyguardWidgetPager) findViewById(R.id.app_widget_container);
-        }
+        mAppWidgetContainer = (KeyguardWidgetPager) findViewById(R.id.app_widget_container);
         mAppWidgetContainer.setVisibility(VISIBLE);
-        mAppWidgetContainerHidden.setVisibility(GONE);
         mAppWidgetContainer.setCallbacks(mWidgetCallbacks);
         mAppWidgetContainer.setDeleteDropTarget(deleteDropTarget);
         mAppWidgetContainer.setMinScale(0.5f);
@@ -432,26 +416,7 @@ public class KeyguardHostView extends KeyguardViewBase {
         showPrimarySecurityScreen(false);
         updateSecurityViews();
         enableUserSelectorIfNecessary();
-
-        mExpandChallengeView = (View) findViewById(R.id.expand_challenge_handle);
-        if (mExpandChallengeView != null) {
-            mExpandChallengeView.setOnLongClickListener(mFastUnlockClickListener);
-        }
-
-        minimizeChallengeIfDesired();
     }
-
-    private final OnLongClickListener mFastUnlockClickListener = new OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View v) {
-            if (mLockPatternUtils.isTactileFeedbackEnabled()) {
-                v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS,
-                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            }
-            showNextSecurityScreenOrFinish(false);
-            return true;
-        }
-    };
 
     private void updateAndAddWidgets() {
         cleanupAppWidgetIds();
@@ -469,7 +434,7 @@ public class KeyguardHostView extends KeyguardViewBase {
         mSwitchPageRunnable.run();
 
         // This needs to be called after the pages are all added.
-        mViewStateManager.showUsabilityHints(mContext);
+        mViewStateManager.showUsabilityHints();
     }
 
     private void maybeEnableAddButton() {
@@ -1120,15 +1085,13 @@ public class KeyguardHostView extends KeyguardViewBase {
         showPrimarySecurityScreen(false);
         getSecurityView(mCurrentSecuritySelection).onResume(KeyguardSecurityView.SCREEN_ON);
 
-        minimizeChallengeIfDesired();
-
         // This is a an attempt to fix bug 7137389 where the device comes back on but the entire
         // layout is blank but forcing a layout causes it to reappear (e.g. with with
         // hierarchyviewer).
         requestLayout();
 
         if (mViewStateManager != null) {
-            mViewStateManager.showUsabilityHints(mContext);
+            mViewStateManager.showUsabilityHints();
         }
 
         requestFocus();
@@ -1185,18 +1148,6 @@ public class KeyguardHostView extends KeyguardViewBase {
             // otherwise, go to the unlock screen, see if they can verify it
             mIsVerifyUnlockOnly = true;
             showSecurityScreen(securityMode);
-        }
-    }
-
-    private void minimizeChallengeIfDesired() {
-        if (mSlidingChallengeLayout == null) {
-            return;
-        }
-
-        if (Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_MAXIMIZE_WIDGETS, 0,
-                UserHandle.USER_CURRENT) == 1) {
-            mSlidingChallengeLayout.showChallenge(false);
         }
     }
 
@@ -1327,11 +1278,7 @@ public class KeyguardHostView extends KeyguardViewBase {
         // cameras we can't trust.  TODO: plumb safe mode into camera creation code and only
         // inflate system-provided camera?
         if (!mSafeModeEnabled && !cameraDisabledByDpm() && mUserSetupCompleted
-                && Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_CAMERA_WIDGET,
-                mContext.getResources().getBoolean(
-                    R.bool.kg_enable_camera_default_widget) ? 1 : 0,
-                UserHandle.USER_CURRENT) == 1) {
+                && mContext.getResources().getBoolean(R.bool.kg_enable_camera_default_widget)) {
             View cameraWidget =
                     CameraWidgetFrame.create(mContext, mCameraWidgetCallbacks, mActivityLauncher);
             if (cameraWidget != null) {
