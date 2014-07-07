@@ -128,6 +128,7 @@ public class UserTile extends QuickSettingsTile {
         if (iv != null) {
             iv.setImageDrawable(userAvatar);
         }
+>>>>>>> 6623a41... Fix ResourceNotFoundException when updating  applied theme
     }
 
     private void queryForUserInformation() {

@@ -1200,16 +1200,17 @@ class ServerThread {
                         reportWtf("Icon Mapping failed", e);
                     }
 
-                try {
-                    // now that the system is up, apply default theme if applicable
-                    if (themeServiceF != null) themeServiceF.systemRunning();
-                    ThemeConfig themeConfig =
-                            ThemeConfig.getBootTheme(contextF.getContentResolver());
-                    String iconPkg = themeConfig.getIconPackPkgName();
-                    pmf.updateIconMapping(iconPkg);
-                } catch (Throwable e) {
-                    reportWtf("Icon Mapping failed", e);
-                }
+                    try {
+                        // now that the system is up, apply default theme if applicable
+                        if (themeServiceF != null) themeServiceF.systemRunning();
+                        ThemeConfig themeConfig =
+                                ThemeConfig.getBootTheme(contextF.getContentResolver());
+                        String iconPkg = themeConfig.getIconPackPkgName();
+                        pmf.updateIconMapping(iconPkg);
+                    } catch (Throwable e) {
+                        reportWtf("Icon Mapping failed", e);
+                    }
+                } 
             });
 
             // For debug builds, log event loop stalls to dropbox for analysis.
