@@ -73,6 +73,10 @@ public class BarTransitions {
         }
     }
 
+    public void updateResources(Resources res) {
+        mBarBackground.updateResources(res);
+    }
+
     public int getMode() {
         return mMode;
     }
@@ -126,11 +130,11 @@ public class BarTransitions {
 
     private static class BarBackgroundDrawable extends Drawable {
         private final int mGradientResourceId;
-        private final int mOpaque;
-        private final int mSemiTransparent;
-        private final Drawable mGradient;
         private final TimeInterpolator mInterpolator;
 
+        private int mOpaque;
+        private int mSemiTransparent;
+        private Drawable mGradient;
         private int mMode = -1;
         private boolean mAnimating;
         private long mStartTime;
@@ -165,11 +169,9 @@ public class BarTransitions {
         }
 
         public void updateResources(Resources res)  {
-            // Retrieve the current bounds for mGradient so they can be set to
-            // the new drawable being loaded, otherwise the bounds will be (0, 0, 0, 0)
-            // and the gradient will not be drawn.
-            Rect bounds = mGradient.getBounds();
-            mGradient.setBounds(bounds);
+            mOpaque = res.getColor(R.color.system_bar_background_opaque);
+            mSemiTransparent = res.getColor(R.color.system_bar_background_semi_transparent);
+            mGradient = res.getDrawable(mGradientResourceId);
         }
 
         @Override
