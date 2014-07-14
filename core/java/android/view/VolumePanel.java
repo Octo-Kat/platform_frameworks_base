@@ -229,7 +229,7 @@ public class VolumePanel extends Handler implements OnSeekBarChangeListener, Vie
         @Override
         public void onChange(boolean selfChange) {
             mVolumeLinkNotification = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.VOLUME_LINK_NOTIFICATION, 1) == 1;
+                    Settings.System.VOLUME_LINK_NOTIFICATION, 0) == 1;
             int overlayStyle = Settings.System.getInt(mContext.getContentResolver(),
                     Settings.System.MODE_VOLUME_OVERLAY, VOLUME_OVERLAY_EXPANDABLE);
             changeOverlayStyle(overlayStyle);
@@ -342,7 +342,7 @@ public class VolumePanel extends Handler implements OnSeekBarChangeListener, Vie
         mVoiceCapable = context.getResources().getBoolean(R.bool.config_voice_capable);
         // Get the user's preferences
         mVolumeLinkNotification = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.VOLUME_LINK_NOTIFICATION, 1) == 1;
+                Settings.System.VOLUME_LINK_NOTIFICATION, 0) == 1;
         int chosenStyle = Settings.System.getInt(context.getContentResolver(),
                 Settings.System.MODE_VOLUME_OVERLAY, VOLUME_OVERLAY_EXPANDABLE);
         changeOverlayStyle(chosenStyle);
