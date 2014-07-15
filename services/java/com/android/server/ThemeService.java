@@ -457,7 +457,7 @@ public class ThemeService extends IThemeService.Stub {
 
     private boolean updateLockscreen(String pkgName) {
         boolean success = false;
-        success = setCustomLockScreenWallpaper();
+        success = setCustomLockScreenWallpaper(pkgName);
 
         if (success) {
             mContext.sendBroadcastAsUser(new Intent(Intent.ACTION_KEYGUARD_WALLPAPER_CHANGED),
@@ -468,20 +468,22 @@ public class ThemeService extends IThemeService.Stub {
 
     private boolean setCustomLockScreenWallpaper(String pkgName) {
         try {
-            if (HOLO_DEFAULT.equals(mPkgName)) {
+            if (HOLO_DEFAULT.equals(pkgName)) {
                 final Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(),
                         com.android.internal.R.drawable.default_wallpaper);
                 WallpaperManager.getInstance(mContext).setKeyguardBitmap(bmp);
             } else {
                 //Get input WP stream from the theme
-                Context themeCtx = mContext.createPackageContext(mPkgName, Context.CONTEXT_IGNORE_SECURITY);
+                Context themeCtx = mContext.createPackageContext(pkgName,
+                        Context.CONTEXT_IGNORE_SECURITY);
                 AssetManager assetManager = themeCtx.getAssets();
                 String wpPath = ThemeUtils.getLockscreenWallpaperPath(assetManager);
                 if (wpPath == null) {
                     Log.w(TAG, "Not setting lockscreen wp because wallpaper file was not found.");
                     return false;
                 }
-                InputStream is = ThemeUtils.getInputStreamFromAsset(themeCtx, "file:///android_asset/" + wpPath);
+                InputStream is = ThemeUtils.getInputStreamFromAsset(themeCtx,
+                        "file:///android_asset/" + wpPath);
 
                 WallpaperManager.getInstance(mContext).setKeyguardStream(is);
             }
@@ -562,7 +564,7 @@ public class ThemeService extends IThemeService.Stub {
             final long token = Binder.clearCallingIdentity();
             try {
                 Configuration config = am.getConfiguration();
-                ThemeConfig.Builder themeBuilder = createBuilderFrom(config, components, mPkgName);
+                ThemeConfig.Builder themeBuilder = createBuilderFrom(config, components, null);
                 ThemeConfig newConfig = themeBuilder.build();
 
                 // If this is a theme upgrade then new config equals existing config. The result
@@ -592,27 +594,32 @@ public class ThemeService extends IThemeService.Stub {
     }
 
     private static ThemeConfig.Builder createBuilderFrom(Configuration config,
-                                                         List<String> components, String pkgName) {
+            Map<String, String> componentMap, String pkgName) {
         ThemeConfig.Builder builder = new ThemeConfig.Builder(config.themeConfig);
 
-        if (components.contains(ThemesContract.ThemesColumns.MODIFIES_ICONS)) {
-            builder.defaultIcon(pkgName);
+        if (componentMap.containsKey(ThemesColumns.MODIFIES_ICONS)) {
+            builder.defaultIcon(pkgName == null ?
+                    componentMap.get(ThemesColumns.MODIFIES_ICONS) : pkgName);
         }
 
-        if (components.contains(ThemesContract.ThemesColumns.MODIFIES_OVERLAYS)) {
-            builder.defaultOverlay(pkgName);
+        if (componentMap.containsKey(ThemesColumns.MODIFIES_OVERLAYS)) {
+            builder.defaultOverlay(pkgName == null ?
+                    componentMap.get(ThemesColumns.MODIFIES_OVERLAYS) : pkgName);
         }
 
-        if (components.contains(ThemesContract.ThemesColumns.MODIFIES_FONTS)) {
-            builder.defaultFont(pkgName);
+        if (componentMap.containsKey(ThemesColumns.MODIFIES_FONTS)) {
+            builder.defaultFont(pkgName == null ?
+                    componentMap.get(ThemesColumns.MODIFIES_FONTS) : pkgName);
         }
 
-        if (components.contains(ThemesContract.ThemesColumns.MODIFIES_STATUS_BAR)) {
-            builder.overlay("com.android.systemui", pkgName);
+        if (componentMap.containsKey(ThemesColumns.MODIFIES_STATUS_BAR)) {
+            builder.overlay("com.android.systemui", pkgName == null ?
+                    componentMap.get(ThemesColumns.MODIFIES_STATUS_BAR) : pkgName);
         }
 
-        if (components.contains(ThemesContract.ThemesColumns.MODIFIES_NAVIGATION_BAR)) {
-            builder.overlay(ThemeConfig.SYSTEMUI_NAVBAR_PKG, pkgName);
+        if (componentMap.containsKey(ThemesColumns.MODIFIES_NAVIGATION_BAR)) {
+            builder.overlay(ThemeConfig.SYSTEMUI_NAVBAR_PKG, pkgName == null ?
+                    componentMap.get(ThemesColumns.MODIFIES_NAVIGATION_BAR) : pkgName);
         }
 
         return builder;
