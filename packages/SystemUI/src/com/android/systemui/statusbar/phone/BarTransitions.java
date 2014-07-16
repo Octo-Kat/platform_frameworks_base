@@ -125,6 +125,7 @@ public class BarTransitions {
     }
 
     private static class BarBackgroundDrawable extends Drawable {
+        private final int mGradientResourceId;
         private final int mOpaque;
         private final int mSemiTransparent;
         private final Drawable mGradient;
@@ -160,6 +161,15 @@ public class BarTransitions {
             }
             mGradient = res.getDrawable(gradientResourceId);
             mInterpolator = new LinearInterpolator();
+            mGradientResourceId = gradientResourceId;
+        }
+
+        public void updateResources(Resources res)  {
+            // Retrieve the current bounds for mGradient so they can be set to
+            // the new drawable being loaded, otherwise the bounds will be (0, 0, 0, 0)
+            // and the gradient will not be drawn.
+            Rect bounds = mGradient.getBounds();
+            mGradient.setBounds(bounds);
         }
 
         @Override
