@@ -117,6 +117,7 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     int mNavigationIconHints = 0;
 
     private Drawable mBackIcon, mBackAltIcon;
+    private Drawable mHomeIcon, mHomeLandIcon;
 
     protected DelegateViewHelper mDelegateHelper;
     private DeadZone mDeadZone;
@@ -144,6 +145,9 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     private final NavTransitionListener mTransitionListener = new NavTransitionListener();
 
     private boolean mModLockDisabled = true;
+
+    private Resources mThemedResources;
+
     private class NavTransitionListener implements TransitionListener {
         private boolean mBackTransitioning;
         private boolean mAppearing;
@@ -359,8 +363,14 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
         return mCurrentView.findViewById(R.id.camera_button);
     }
 
+    private void getIcons(Resources res) {
+        mHomeIcon = res.getDrawable(R.drawable.ic_sysbar_home);
+        mHomeLandIcon = res.getDrawable(R.drawable.ic_sysbar_home_land);
+    }
 
-    public void updateResources() {
+    public void updateResources(Resources res) {
+        mThemedResources = res;
+        getIcons(mThemedResources);
         for (int i = 0; i < mRotatedViews.length; i++) {
             ViewGroup container = (ViewGroup) mRotatedViews[i];
             if (container != null) {
@@ -375,6 +385,7 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
 
     @Override
     public void setLayoutDirection(int layoutDirection) {
+        if (mThemedResources != null) getIcons(mThemedResources);
         updateSettings();
 
         super.setLayoutDirection(layoutDirection);

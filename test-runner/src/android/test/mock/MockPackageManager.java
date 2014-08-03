@@ -400,11 +400,6 @@ public class MockPackageManager extends PackageManager {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Resources getResourcesForApplicationAsUser(String appPackageName, int userId) {
-        throw new UnsupportedOperationException();
-    }
-
     /** @hide */
     @Override
     public Resources getResourcesForApplicationAsUser(String appPackageName, int userId) {
