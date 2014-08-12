@@ -491,15 +491,9 @@ public class IconPackHelper {
                     bitmapDrawable.setTargetDensity(res.getDisplayMetrics());
                 }
                 canvas.setDensity(bitmap.getDensity());
+            }
 
-                // Respect the original size of an icon
-                width = bitmap.getWidth();
-                height = bitmap.getHeight();
-             }
-
-             if (width <= 0 || height <= 0) return null;
-
-             Bitmap bitmap = Bitmap.createBitmap(width, height,
+            Bitmap bitmap = Bitmap.createBitmap(iconSize, iconSize,
                     Bitmap.Config.ARGB_8888);
             canvas.setBitmap(bitmap);
 
