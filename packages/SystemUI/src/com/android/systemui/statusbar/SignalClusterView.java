@@ -18,6 +18,7 @@
 
 package com.android.systemui.statusbar;
 
+<<<<<<< HEAD
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
@@ -26,6 +27,16 @@ import android.graphics.PorterDuff.Mode;
 import android.os.Handler;
 import android.os.UserHandle;
 import android.provider.Settings;
+=======
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
+import android.content.Context;
+import android.graphics.PorterDuff;
+import android.os.Handler;
+>>>>>>> 52bea55... Implement Dynamic System Bars [1/2]
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -35,11 +46,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.android.systemui.R;
+import com.android.systemui.statusbar.phone.BarBackgroundUpdater;
 import com.android.systemui.statusbar.policy.NetworkController;
 
+import java.util.ArrayList;
+
 // Intimately tied to the design of res/layout/signal_cluster_view.xml
-public class SignalClusterView
-        extends LinearLayout
+public class SignalClusterView extends LinearLayout
         implements NetworkController.SignalCluster {
 
     static final boolean DEBUG = false;
@@ -69,6 +82,7 @@ public class SignalClusterView
         mEthernet;
     View mSpacer;
 
+<<<<<<< HEAD
     private SettingsObserver mSettingsObserver;
 
     private boolean mCustomColor;
@@ -93,6 +107,12 @@ public class SignalClusterView
             updateSettings();
         }
     }
+=======
+    private final Handler mHandler;
+    private final int mDSBDuration;
+    private int mPreviousOverrideIconColor = 0;
+    private int mOverrideIconColor = 0;
+>>>>>>> 52bea55... Implement Dynamic System Bars [1/2]
 
     public SignalClusterView(Context context) {
         this(context, null);
@@ -104,11 +124,88 @@ public class SignalClusterView
 
     public SignalClusterView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+<<<<<<< HEAD
 
         if (mSettingsObserver == null) {
             mSettingsObserver = new SettingsObserver(new Handler());
         }
         mSettingsObserver.observe();
+=======
+        mHandler = new Handler();
+        mDSBDuration = context.getResources().getInteger(R.integer.dsb_transition_duration);
+        BarBackgroundUpdater.addListener(new BarBackgroundUpdater.UpdateListener(this) {
+
+            @Override
+            public AnimatorSet onUpdateStatusBarIconColor(final int previousIconColor,
+                    final int iconColor) {
+                mPreviousOverrideIconColor = previousIconColor;
+                mOverrideIconColor = iconColor;
+
+                if (mOverrideIconColor == 0) {
+                    mHandler.post(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            if (mWifi != null) {
+                                mWifi.setColorFilter(null);
+                            }
+                            if (mMobile != null) {
+                                mMobile.setColorFilter(null);
+                            }
+                            if (mMobileType != null) {
+                                mMobileType.setColorFilter(null);
+                            }
+                            if (mAirplane != null) {
+                                mAirplane.setColorFilter(null);
+                            }
+                        }
+
+                    });
+
+                    return null;
+                } else {
+                    final ArrayList<Animator> anims = new ArrayList<Animator>();
+
+                    if (mWifi != null) {
+                        anims.add(buildAnimator(mWifi));
+                    }
+                    if (mMobile != null) {
+                        anims.add(buildAnimator(mMobile));
+                    }
+                    if (mMobileType != null) {
+                        anims.add(buildAnimator(mMobileType));
+                    }
+                    if (mAirplane != null) {
+                        anims.add(buildAnimator(mAirplane));
+                    }
+
+                    if (anims.isEmpty()) {
+                        return null;
+                    } else {
+                        final AnimatorSet animSet = new AnimatorSet();
+                        animSet.playTogether(anims);
+                        return animSet;
+                    }
+                }
+            }
+
+        });
+    }
+
+    private ObjectAnimator buildAnimator(final ImageView target) {
+        final ObjectAnimator animator = ObjectAnimator.ofObject(target, "colorFilter",
+                new ArgbEvaluator(), mPreviousOverrideIconColor, mOverrideIconColor);
+        animator.setDuration(mDSBDuration);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+
+            @Override
+            public void onAnimationUpdate(final ValueAnimator anim) {
+                target.invalidate();
+            }
+
+        });
+        return animator;
+>>>>>>> 52bea55... Implement Dynamic System Bars [1/2]
     }
 
     public void setNetworkController(NetworkController nc) {
@@ -349,5 +446,5 @@ public class SignalClusterView
                 Settings.System.SYSTEM_ICON_COLOR, -2, UserHandle.USER_CURRENT);
         apply();
     }
-}
 
+}
