@@ -48,7 +48,7 @@ public class MSimSignalClusterView
 
     public static final int STYLE_NORMAL = 0;
     public static final int STYLE_TEXT = 1;
-    public static final int STYLE_HIDDEN = 2;
+    //public static final int STYLE_HIDDEN = 2;
 
     private int mSignalClusterStyle = STYLE_NORMAL;
     private boolean mWifiVisible = false;
