@@ -1729,8 +1729,11 @@ public class TelephonyManager {
             return getITelephony().isOffhook();
         } catch (RemoteException e) {
             Log.e(TAG, "Error calling ITelephony#isOffhook", e);
+            return false;
+        } catch (NullPointerException e) {
+			// Dalvik hates isOffhook and starts infinite loop. Let's break the loop with NPE exception
+			return false;
         }
-        return false;
     }
 
     /** @hide */
